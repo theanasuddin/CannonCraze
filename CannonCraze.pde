@@ -1,4 +1,4 @@
-final float CANNONBALL_RADIUS = 25 / 2;
+float CANNONBALL_RADIUS = 25 / 2;
 final float TARGET_WIDTH = 55;
 final float TARGET_HEIGHT = 24;
 final float GUIDELINE_LENGTH = 55;
@@ -11,9 +11,11 @@ boolean isProjectilePathActive = false;
 boolean isWin = false;
 boolean isGameOver = false;
 boolean playAgainHover, mainMenuButtonHover;
-boolean playHover, exitHover, helpHover, creditHover;
+boolean playHover, settingsHover, exitHover, helpHover, creditHover;
 boolean isMainMenuActive = true;
 boolean isInstructionsWindowActive = false, isCreditWindowActive = false;
+boolean isSettingsWindowActive = false;
+boolean isGuidelineDisabled = false;
 
 float angle = 0;
 float velocity = 0;
@@ -31,6 +33,14 @@ PImage closeButtonHover;
 PImage flower;
 PImage github, githubHover;
 PImage icon;   //Game icon.
+PImage checkedCheckbox;
+PImage checkedCheckboxHover;
+PImage uncheckedCheckbox;
+PImage uncheckedCheckboxHover;
+PImage leftArrow;
+PImage leftArrowHover;
+PImage rightArrow;
+PImage rightArrowHover;
 
 PFont montserratRegular, montserratBold, playlistScript;
 
@@ -51,13 +61,24 @@ void setup() {
   flower = loadImage("flower.png");
   github = loadImage("github.png");
   githubHover = loadImage("github_hover.png");
+  checkedCheckbox = loadImage("checked_checkbox.png");
+  checkedCheckboxHover = loadImage("checked_checkbox_hover.png");
+  uncheckedCheckbox = loadImage("unchecked_checkbox.png");
+  uncheckedCheckboxHover = loadImage("unchecked_checkbox_hover.png");
+  leftArrow = loadImage("left_arrow.png");
+  leftArrowHover = loadImage("left_arrow_hover.png");
+  rightArrow = loadImage("right_arrow.png");
+  rightArrowHover = loadImage("right_arrow_hover.png");
   montserratRegular = createFont("Montserrat-Regular.otf", 192);
   montserratBold = createFont("Montserrat-Bold.otf", 192);
   playlistScript = createFont("Playlist-Script.otf", 192);
 }
 
 void draw() {
-  if (isInstructionsWindowActive) {
+  if (isSettingsWindowActive) {
+    image(menuBackground, 0, 0);
+    drawSettingsWindow();
+  } else if (isInstructionsWindowActive) {
     image(menuBackground, 0, 0);
     drawInstructionsWindow();
   } else if (isCreditWindowActive) {
@@ -82,7 +103,9 @@ void draw() {
       drawCannonball();
     }
 
-    drawAngleGuides();
+    if (!isGuidelineDisabled) {
+      drawAngleGuides();
+    }
 
     if (mousePressed && !isProjectilePathActive) {
       drawAimCannonball(aimCannonballState);
@@ -159,6 +182,36 @@ void mousePressed() {
   if (isMouseInsideTheCannonball(mouseX, mouseY, CANNONBALL_POS_X, CANNONBALL_POS_Y, CANNONBALL_RADIUS)) {
     aimCannonballState = true;
   }
+
+  if (isSettingsWindowActive) {
+    if (mouseX >= 438 && mouseX <= 458 && mouseY >= 215 && mouseY <= 235) {
+      CANNONBALL_RADIUS--;
+      if (int(CANNONBALL_RADIUS) <= 5) {
+        CANNONBALL_RADIUS = 5;
+      }
+    } else if (mouseX >= 550 && mouseX <= 570 && mouseY >= 215 && mouseY <= 235) {
+      CANNONBALL_RADIUS++;
+      if (int(CANNONBALL_RADIUS) >= 15) {
+        CANNONBALL_RADIUS = 15;
+      }
+    } else if (mouseX >= 494 && mouseX <= 514 && mouseY >= 311 && mouseY <= 331) {
+      if (isGuidelineDisabled) {
+        isGuidelineDisabled = false;
+      } else {
+        isGuidelineDisabled = true;
+      }
+    } else if (mouseX >= 438 && mouseX <= 458 && mouseY >= 247 && mouseY <= 267) {
+      CANNONBALL_RADIUS--;
+      if (int(CANNONBALL_RADIUS) <= 5) {
+        CANNONBALL_RADIUS = 5;
+      }
+    } else if (mouseX >= 550 && mouseX <= 570 && mouseY >= 247 && mouseY <= 267) {
+      CANNONBALL_RADIUS++;
+      if (int(CANNONBALL_RADIUS) >= 15) {
+        CANNONBALL_RADIUS = 15;
+      }
+    }
+  }
 }
 
 void mouseReleased() {
@@ -194,8 +247,9 @@ void drawAimCannonball(boolean aimBallState) {
     stroke(#3472C5);
     ellipse(aimCannonballPosX, aimCannonballPosY, CANNONBALL_RADIUS * 2, CANNONBALL_RADIUS * 2);
     strokeWeight(5);
-    line(aimCannonballPosX, aimCannonballPosY, CANNONBALL_POS_X, CANNONBALL_POS_Y);
-
+    if (!isGuidelineDisabled) {
+      line(aimCannonballPosX, aimCannonballPosY, CANNONBALL_POS_X, CANNONBALL_POS_Y);
+    }
     velocity = getVelocity(aimCannonballPosX, aimCannonballPosY, CANNONBALL_POS_X, CANNONBALL_POS_Y);
   }
 }
@@ -242,6 +296,121 @@ void drawCannonballAlongProjectilePath(float t) {
       isGameOver = true;
       checkToSetHighScore();
     }
+  }
+}
+
+void drawSettingsWindow() {
+  // background
+  stroke(#FF7D5A);
+  fill(#9DDBF0);
+  rectMode(CENTER);
+  rect(centreX, centreY, 488, 245, 2);
+
+  String settings = "Settings";
+  String cannonballSize = "Cannonball Size";
+  String numberOfTargets = "Number of Targets";
+  String difficultyLevel = "Difficulty Level";
+  String disableGuideline = "Disable Guideline";
+
+  textFont(montserratBold, 17);
+  fill(#080340);
+  textAlign(CENTER, CENTER);
+  text(settings, 370.5, 187.5);
+  textFont(montserratRegular, 17);
+  textAlign(LEFT, TOP);
+  text(cannonballSize, 169.5, 215);
+  text(numberOfTargets, 169.5, 247);
+  text(difficultyLevel, 169.5, 279);
+  text(disableGuideline, 169.5, 311);
+
+  closeSettingsWindowButton();
+  toggleGuideline();
+  toggleCursorForSettingsWindow();
+  drawCannonballSizeTextAndControls();
+}
+
+void closeSettingsWindowButton() {
+  if (isSettingsWindowActive) {
+    if (mouseX >= 585 && mouseX <= 605 && mouseY >= 159 && mouseY <= 179) {
+      image(closeButtonHover, 585, 159);
+      if (mousePressed) {
+        isMainMenuActive = true;
+        isSettingsWindowActive = false;
+      }
+    } else {
+      image(closeButton, 585, 159);
+    }
+  }
+}
+
+void toggleGuideline() {
+  if (isSettingsWindowActive) {
+    if (mouseX >= 494 && mouseX <= 514 && mouseY >= 311 && mouseY <= 331) {
+      if (isGuidelineDisabled) {
+        image(checkedCheckboxHover, 494, 311);
+      } else {
+        image(uncheckedCheckboxHover, 494, 311);
+      }
+    } else {
+      if (isGuidelineDisabled) {
+        image(checkedCheckbox, 494, 311);
+      } else {
+        image(uncheckedCheckbox, 494, 311);
+      }
+    }
+  }
+}
+
+void toggleCursorForSettingsWindow() {
+  if (mouseX >= 585 && mouseX <= 605 && mouseY >= 159 && mouseY <= 179) {
+    cursor(HAND);
+  } else if (mouseX >= 494 && mouseX <= 514 && mouseY >= 311 && mouseY <= 331) {
+    cursor(HAND);
+  } else if (mouseX >= 438 && mouseX <= 458 && mouseY >= 215 && mouseY <= 235) {
+    cursor(HAND);
+  } else if (mouseX >= 550 && mouseX <= 570 && mouseY >= 215 && mouseY <= 235) {
+    cursor(HAND);
+  } else if (mouseX >= 438 && mouseX <= 458 && mouseY >= 247 && mouseY <= 267) {
+    cursor(HAND);
+  } else if (mouseX >= 550 && mouseX <= 570 && mouseY >= 247 && mouseY <= 267) {
+    cursor(HAND);
+  } else {
+    cursor(ARROW);
+  }
+}
+
+void drawCannonballSizeTextAndControls() {
+  fill(#080340);
+  textFont(montserratRegular, 17);
+  textAlign(LEFT, TOP);
+  text(int(CANNONBALL_RADIUS), 499, 215);
+
+  // cannonball size left button
+  if (mouseX >= 438 && mouseX <= 458 && mouseY >= 215 && mouseY <= 235) {
+    image(leftArrowHover, 438, 215);
+  } else {
+    image(leftArrow, 438, 215);
+  }
+
+  // cannonball size right button
+  if (mouseX >= 550 && mouseX <= 570 && mouseY >= 215 && mouseY <= 235) {
+    image(rightArrowHover, 550, 215);
+  } else {
+    image(rightArrow, 550, 215);
+  }
+
+  // number of targets left button
+  if (mouseX >= 438 && mouseX <= 458 && mouseY >= 247 && mouseY <= 267) {
+    image(leftArrowHover, 438, 247);
+  } else {
+    image(leftArrow, 438, 247);
+  }
+
+  // number of targets right button
+  if (mouseX >= 550 && mouseX <= 570 && mouseY >= 247 && mouseY <= 267) {
+    image(rightArrowHover, 550, 247);
+  } else {
+    image(rightArrow, 550, 247);
   }
 }
 
@@ -517,11 +686,21 @@ void drawMainMenuButtons() {
     stroke(#FF7D5A);
     fill(#9DDBF0);
   }
-  rect(188.5, 201, 124, 57, 2);
+  rect(188.5, 200.5, 124, 57, 2);
   fill(#080340);
-  text("Play", 188.5, 201);
+  text("Play", 188.5, 200.5);
 
   // settings button
+  if (settingsHover) {
+    fill(#26ECE2);
+    stroke(#FEAE0D);
+  } else {
+    stroke(#FF7D5A);
+    fill(#9DDBF0);
+  }
+  rect(188.5, 272.5, 124, 57, 2);
+  fill(#080340);
+  text("Settings", 188.5, 272.5);
 
   // help button
   if (helpHover) {
@@ -531,9 +710,9 @@ void drawMainMenuButtons() {
     stroke(#FF7D5A);
     fill(#9DDBF0);
   }
-  rect(188.5, 345, 124, 57, 2);
+  rect(188.5, 344.5, 124, 57, 2);
   fill(#080340);
-  text("Help", 188.5, 345);
+  text("Help", 188.5, 344.5);
 
   // credit button
   if (creditHover) {
@@ -543,9 +722,9 @@ void drawMainMenuButtons() {
     stroke(#FF7D5A);
     fill(#9DDBF0);
   }
-  rect(552.5, 201, 124, 57, 2);
+  rect(552.5, 200.5, 124, 57, 2);
   fill(#080340);
-  text("Credit", 552.5, 201);
+  text("Credit", 552.5, 200.5);
 
   // exit button
   if (exitHover) {
@@ -555,9 +734,9 @@ void drawMainMenuButtons() {
     stroke(#FF7D5A);
     fill(#9DDBF0);
   }
-  rect(552.5, 273, 124, 57, 2);
+  rect(552.5, 272.5, 124, 57, 2);
   fill(#080340);
-  text("Exit", 552.5, 273);
+  text("Exit", 552.5, 272.5);
 }
 
 boolean isMouseInsideAButton(float buttonCentreX, float buttonCentreY) {
@@ -569,25 +748,31 @@ boolean isMouseInsideAButton(float buttonCentreX, float buttonCentreY) {
 }
 
 void doMainMenuButtonsActions() {
-  if (isMouseInsideAButton(188.5, 201)) {
+  if (isMouseInsideAButton(188.5, 200.5)) {
     cursor(HAND);
     playHover = true;
     if (mousePressed) {
       startPlaying();
     }
-  } else if (isMouseInsideAButton(552.5, 273)) {
+  } else if (isMouseInsideAButton(188.5, 272.5)) {
+    cursor(HAND);
+    settingsHover = true;
+    if (mousePressed) {
+      isSettingsWindowActive = true;
+    }
+  } else if (isMouseInsideAButton(552.5, 272.5)) {
     cursor(HAND);
     exitHover = true;
     if (mousePressed) {
       exit();
     }
-  } else if (isMouseInsideAButton(188.5, 345)) {
+  } else if (isMouseInsideAButton(188.5, 344.5)) {
     cursor(HAND);
     helpHover = true;
     if (mousePressed) {
       isInstructionsWindowActive = true;
     }
-  } else if (isMouseInsideAButton(552.5, 201)) {
+  } else if (isMouseInsideAButton(552.5, 200.5)) {
     cursor(HAND);
     creditHover = true;
     if (mousePressed) {
@@ -596,6 +781,7 @@ void doMainMenuButtonsActions() {
   } else {
     cursor(ARROW);
     playHover = false;
+    settingsHover = false;
     exitHover = false;
     helpHover = false;
     creditHover = false;
