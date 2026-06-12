@@ -21,7 +21,8 @@ float angle = 0;
 float velocity = 0;
 float time = 0;
 float desiredTragetPositionX;
-int desiredTragetIndex = (int)random(0, 10);
+int desiredTragetIndex = 0;
+int numberOfTargets = 10;
 float centreX, centreY;
 int score = 0;
 int highScore;
@@ -54,6 +55,7 @@ void setup() {
   centreX = width / 2;
   centreY = height / 2;
   highScore = loadHighScore("high_score.txt");
+  loadSettings("settings.txt");
   gameBackground = loadImage("game_background.png");
   menuBackground = loadImage("menu_background.jpg");
   closeButton = loadImage("close_button.png");
@@ -134,13 +136,14 @@ void drawCannonball() {
 }
 
 float drawTargets(int desiredTragetPosition) {
+  float brickWidth = 550.0 / numberOfTargets;
   float initialTargetPosX = 162.5;
   float targetPosY = 521.5;
   float desiredTragetPositionX = 0;
 
   strokeWeight(1);
   rectMode(CORNER);
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < numberOfTargets; i++) {
     if (i == desiredTragetPosition) {
       fill(#26ECE2);
       desiredTragetPositionX = initialTargetPosX;
@@ -148,8 +151,8 @@ float drawTargets(int desiredTragetPosition) {
       fill(#350528);
     }
 
-    rect(initialTargetPosX, targetPosY, TARGET_WIDTH, TARGET_HEIGHT, 2);
-    initialTargetPosX += 55;
+    rect(initialTargetPosX, targetPosY, brickWidth, TARGET_HEIGHT, 2);
+    initialTargetPosX += brickWidth;
   }
 
   return desiredTragetPositionX;
@@ -201,14 +204,14 @@ void mousePressed() {
         isGuidelineDisabled = true;
       }
     } else if (mouseX >= 438 && mouseX <= 458 && mouseY >= 247 && mouseY <= 267) {
-      CANNONBALL_RADIUS--;
-      if (int(CANNONBALL_RADIUS) <= 5) {
-        CANNONBALL_RADIUS = 5;
+      numberOfTargets--;
+      if (numberOfTargets < 5) {
+        numberOfTargets = 5;
       }
     } else if (mouseX >= 550 && mouseX <= 570 && mouseY >= 247 && mouseY <= 267) {
-      CANNONBALL_RADIUS++;
-      if (int(CANNONBALL_RADIUS) >= 15) {
-        CANNONBALL_RADIUS = 15;
+      numberOfTargets++;
+      if (numberOfTargets > 15) {
+        numberOfTargets = 15;
       }
     }
   }
@@ -277,18 +280,19 @@ void drawCannonballAlongProjectilePath(float t) {
   strokeWeight(1);
   ellipse(posX, posY, CANNONBALL_RADIUS * 2, CANNONBALL_RADIUS * 2);
 
-  if ((posX < 162.5 - CANNONBALL_RADIUS || posX > 492.5 + CANNONBALL_RADIUS) && posY > height + CANNONBALL_RADIUS) {
+  if ((posX < 162.5 - CANNONBALL_RADIUS || posX > 712.5 + CANNONBALL_RADIUS) && posY > height + CANNONBALL_RADIUS) {
     isProjectilePathActive = false;
     time = 0;
     isGameOver = true;
     checkToSetHighScore();
   }
 
-  if (posX >= 162.5 - CANNONBALL_RADIUS && posX <= 492.5 + CANNONBALL_RADIUS && posY >= 521.5 - CANNONBALL_RADIUS) {
+  if (posX >= 162.5 - CANNONBALL_RADIUS && posX <= 712.5 + CANNONBALL_RADIUS && posY >= 521.5 - CANNONBALL_RADIUS) {
     isProjectilePathActive = false;
     time = 0;
 
-    if (posX >= desiredTragetPositionX + CANNONBALL_RADIUS && posX <= (desiredTragetPositionX + TARGET_WIDTH) - CANNONBALL_RADIUS) {
+    float brickWidth = 550.0 / numberOfTargets;
+    if (posX >= desiredTragetPositionX + CANNONBALL_RADIUS && posX <= (desiredTragetPositionX + brickWidth) - CANNONBALL_RADIUS) {
       reset();
       score++;
       println(score);
@@ -306,22 +310,22 @@ void drawSettingsWindow() {
   rectMode(CENTER);
   rect(centreX, centreY, 488, 245, 2);
 
-  String settings = "Settings";
-  String cannonballSize = "Cannonball Size";
-  String numberOfTargets = "Number of Targets";
-  String difficultyLevel = "Difficulty Level";
-  String disableGuideline = "Disable Guideline";
+  String settingsTitle = "Settings";
+  String cannonballSizeLabel = "Cannonball Size";
+  String numberOfTargetsLabel = "Number of Targets";
+  String difficultyLevelLabel = "Difficulty Level";
+  String disableGuidelineLabel = "Disable Guideline";
 
   textFont(montserratBold, 17);
   fill(#080340);
   textAlign(CENTER, CENTER);
-  text(settings, 370.5, 187.5);
+  text(settingsTitle, 370.5, 187.5);
   textFont(montserratRegular, 17);
   textAlign(LEFT, TOP);
-  text(cannonballSize, 169.5, 215);
-  text(numberOfTargets, 169.5, 247);
-  text(difficultyLevel, 169.5, 279);
-  text(disableGuideline, 169.5, 311);
+  text(cannonballSizeLabel, 169.5, 215);
+  text(numberOfTargetsLabel, 169.5, 247);
+  text(difficultyLevelLabel, 169.5, 279);
+  text(disableGuidelineLabel, 169.5, 311);
 
   closeSettingsWindowButton();
   toggleGuideline();
@@ -336,6 +340,7 @@ void closeSettingsWindowButton() {
       if (mousePressed) {
         isMainMenuActive = true;
         isSettingsWindowActive = false;
+        saveSettings("settings.txt");
       }
     } else {
       image(closeButton, 585, 159);
@@ -384,6 +389,7 @@ void drawCannonballSizeTextAndControls() {
   textFont(montserratRegular, 17);
   textAlign(LEFT, TOP);
   text(int(CANNONBALL_RADIUS), 499, 215);
+  text(numberOfTargets, 499, 247);
 
   // cannonball size left button
   if (mouseX >= 438 && mouseX <= 458 && mouseY >= 215 && mouseY <= 235) {
@@ -608,7 +614,7 @@ void reset() {
   velocity = 0;
   angle = 0;
   score = 0;
-  desiredTragetIndex = (int)random(0, 10);
+  desiredTragetIndex = (int)random(0, numberOfTargets);
   highScore = loadHighScore("high_score.txt");
   isWin = false;
 }
@@ -646,6 +652,36 @@ void checkToSetHighScore() {
     catch (Exception e) {
       e.printStackTrace();
     }
+  }
+}
+
+void loadSettings(String fileName) {
+  try {
+    String[] lines = loadStrings(fileName);
+    if (lines != null && lines.length >= 1) {
+      numberOfTargets = int(lines[0]);
+    }
+    if (lines != null && lines.length >= 2) {
+      isGuidelineDisabled = lines[1].equals("true");
+    }
+    if (numberOfTargets < 5) numberOfTargets = 5;
+    if (numberOfTargets > 15) numberOfTargets = 15;
+  }
+  catch (Exception e) {
+    // use defaults
+  }
+}
+
+void saveSettings(String fileName) {
+  try {
+    String[] lines = {
+      str(numberOfTargets),
+      isGuidelineDisabled ? "true" : "false"
+    };
+    saveStrings("data/" + fileName, lines);
+  }
+  catch (Exception e) {
+    e.printStackTrace();
   }
 }
 
@@ -791,4 +827,5 @@ void doMainMenuButtonsActions() {
 void startPlaying() {
   isMainMenuActive = false;
   isGameOver = false;
+  desiredTragetIndex = (int)random(0, numberOfTargets);
 }
