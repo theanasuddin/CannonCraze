@@ -80,7 +80,7 @@ boolean wantHand = false;    // any control hovered this frame → hand cursor
 void setup() {
   size(960, 600);
   pixelDensity(displayDensity());
-  surface.setTitle("Cannon Craze");
+  surface.setTitle("Cannon Craze by Anas Uddin");
   surface.setIcon(loadImage("icon.png"));
 
   centreX = width  / 2.0;
