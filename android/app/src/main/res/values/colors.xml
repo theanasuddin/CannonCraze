@@ -1,0 +1,4 @@
+<resources>
+    <!-- The game's SKY_TOP: shown while the engine starts, so launch never flashes white -->
+    <color name="sky_top">#030210</color>
+</resources>

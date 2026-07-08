@@ -1,4 +1,4 @@
-// ── Theme — design system: palette, typography, drawing primitives ─────────────
+// -- Theme: design system: palette, typography, drawing primitives -------------
 
 // Ink
 final color INK       = #EEF1FF;
@@ -44,13 +44,13 @@ void loadTheme() {
   shapeLogo.disableStyle();
 }
 
-// ── Easing ─────────────────────────────────────────────────────────────────────
+// -- Easing ---------------------------------------------------------------------
 
 float easeOutCubic(float p) {
   return 1 - pow(1 - constrain(p, 0, 1), 3);
 }
 
-// ── Tracked (letter-spaced) text ───────────────────────────────────────────────
+// -- Tracked (letter-spaced) text -----------------------------------------------
 // Set textFont/textSize before calling; fill applies as usual.
 
 float trackedWidth(String s, float tracking) {
@@ -82,7 +82,7 @@ void trackedTextR(String s, float x, float y, float tracking) {
   trackedTextL(s, x - trackedWidth(s, tracking), y, tracking);
 }
 
-// ── Glow primitives ────────────────────────────────────────────────────────────
+// -- Glow primitives ------------------------------------------------------------
 
 void glowCircle(float x, float y, float r, color c, float strength) {
   pushStyle();
@@ -107,7 +107,7 @@ void glowLine(float x1, float y1, float x2, float y2, color c, float coreW, floa
   popStyle();
 }
 
-// ── Panel (glass card) ─────────────────────────────────────────────────────────
+// -- Panel (glass card) ---------------------------------------------------------
 
 void drawPanel(float cx, float cy, float w, float h, float r, float alphaMul) {
   pushStyle();

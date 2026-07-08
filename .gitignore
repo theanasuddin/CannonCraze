@@ -1,0 +1,28 @@
+# Processing build output
+/out/
+/out-build/
+/out-export*/
+
+# Release packages: attach these to a GitHub Release, do not commit them
+/dist/
+
+# Player state, created and rewritten at runtime
+/data/high_score.txt
+/data/settings.txt
+
+# Personal deployment material: the playbooks for shipping the game and the
+# Play Store listing assets, none of which are part of the game itself. The
+# privacy policy stays tracked because the public listing must link to it.
+/docs/PLAY_STORE_GUIDE.md
+/docs/GITHUB_GUIDE.md
+/docs/playstore/
+
+# Local editor / tool state
+/.claude/settings.local.json
+/.vscode/settings.json
+/.metals/
+
+# OS cruft
+Thumbs.db
+Desktop.ini
+.DS_Store

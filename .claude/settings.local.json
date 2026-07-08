@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//c/Program Files/Processing/app/resources/**)"
-    ]
-  }
-}

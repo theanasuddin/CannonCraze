@@ -1,0 +1,78 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Release signing: create android/keystore.properties (see keystore.properties.example)
+// with the upload keystore details. Debug builds work without it.
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('keystore.properties')
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+
+android {
+    namespace 'com.anasuddin.cannoncraze'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.anasuddin.cannoncraze'
+        minSdk 21
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    sourceSets {
+        // Fonts and the cannon glyph come straight from the desktop sketch's
+        // data folder, so both platforms share one set of assets.
+        main.assets.srcDirs += '../../data'
+    }
+
+    androidResources {
+        // Runtime save files from the desktop game live in data/ too; they are
+        // not assets and must stay out of the app bundle.
+        ignoreAssetsPattern '!high_score.txt:!settings.txt'
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePropsFile.exists()) {
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+        }
+        release {
+            minifyEnabled false
+            shrinkResources false
+            if (keystorePropsFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation files('libs/processing-core.jar')
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    // Aligns the kotlin-stdlib-jdk7/jdk8 shells pulled in transitively by
+    // AndroidX, which otherwise trip the duplicate-classes check.
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
+}

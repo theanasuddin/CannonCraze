@@ -1,11 +1,11 @@
-// ── Cannon Craze ───────────────────────────────────────────────────────────────
+// -- Cannon Craze -----------------------------------------------------------------
 // A minimal neon-noir arcade cannon game.
 // Pull the cannonball back to aim, release to fire, land on the lit pad.
 //
-// Tabs: Theme (design system) · Background (scene) · Gameplay · Menu · Ui
-//       Particles · Persistence
+// Tabs: Theme (design system) - Viewport (resizable window) - Background (scene)
+//       Gameplay - Menu - Ui - Particles - Sound - Persistence
 
-// ── Screens / flow ─────────────────────────────────────────────────────────────
+// -- Screens / flow ---------------------------------------------------------------
 
 final int SCREEN_MENU = 0;
 final int SCREEN_PLAY = 1;
@@ -18,7 +18,7 @@ final int MODAL_CREDITS  = 3;
 int screenId = SCREEN_MENU;
 int modalId  = MODAL_NONE;
 
-// ── Gameplay constants ─────────────────────────────────────────────────────────
+// -- Gameplay constants -----------------------------------------------------------
 
 final float CANNON_X     = 126;    // barrel pivot / launch origin
 final float CANNON_Y     = 380;
@@ -38,7 +38,7 @@ final float TARGET_H     = 16;
 final int   TARGETS_MIN  = 5;
 final int   TARGETS_MAX  = 15;
 
-// ── Game state ─────────────────────────────────────────────────────────────────
+// -- Game state -------------------------------------------------------------------
 
 int     score       = 0;
 int     highScore   = 0;
@@ -49,6 +49,8 @@ boolean isNewRecord = false;
 float   ballRadius      = 12;
 int     targetCount     = 10;
 boolean guidelineHidden = false;
+boolean soundOn         = true;
+float   soundVolume     = 0.8;   // 0..1 master volume
 
 // Ball / physics
 float   angle      = 0;      // pull angle (ball dragged down-left of the pivot)
@@ -73,30 +75,37 @@ float overlayT = 0;          // game-over overlay entrance
 float modalT   = 0;          // modal entrance
 
 float   centreX, centreY;
-boolean wantHand = false;    // any control hovered this frame → hand cursor
+boolean wantHand = false;    // any control hovered this frame gets a hand cursor
 
-// ── Setup / draw ───────────────────────────────────────────────────────────────
+// -- Setup / draw -----------------------------------------------------------------
 
 void setup() {
-  size(960, 600);
+  // Initial window size == the virtual canvas (VIEW_W x VIEW_H). The custom
+  // renderer is the stock JAVA2D pipeline plus a fix for a JDK race that used
+  // to freeze the sketch during live window resizes.
+  size(960, 600, "CannonCrazeGraphics");
   pixelDensity(displayDensity());
-  surface.setTitle("Cannon Craze by Anas Uddin");
+  surface.setTitle("Cannon Craze");
   surface.setIcon(loadImage("icon.png"));
 
-  centreX = width  / 2.0;
-  centreY = height / 2.0;
+  centreX = VIEW_W / 2.0;
+  centreY = VIEW_H / 2.0;
 
   loadTheme();
-  buildBackground();
+  initViewport();
   initUi();
   initParticles();
 
   highScore = loadHighScore("high_score.txt");
   loadSettings("settings.txt");
+  initSound();
 }
 
 void draw() {
+  updateViewport();
   wantHand = false;
+
+  beginViewport();
 
   if (screenId == SCREEN_MENU) drawMenu();
   else                         drawGameplay();
@@ -109,9 +118,11 @@ void draw() {
     rectMode(CORNER);
     noStroke();
     fill(SKY_TOP, 255 * fadeT);
-    rect(0, 0, width, height);
+    rect(worldLeft(), worldTop(), worldW, worldH);
     popStyle();
   }
+
+  endViewport();
 
   cursor(wantHand ? HAND : ARROW);
 }
@@ -120,10 +131,11 @@ float tSec() {
   return millis() / 1000.0;
 }
 
-// ── Input ──────────────────────────────────────────────────────────────────────
+// -- Input ------------------------------------------------------------------------
 
 void mousePressed() {
   if (mouseButton != LEFT) return;
+  syncCanvasMouse();
 
   if (modalId != MODAL_NONE) {
     handleModalClick();
@@ -133,10 +145,23 @@ void mousePressed() {
     handleGameOverClick();
   } else if (!isInFlight && overGrabZone()) {
     isAiming = true;
+    sfxGrab();
+  }
+}
+
+void mouseDragged() {
+  if (sldVolume != null && sldVolume.dragging) {
+    syncCanvasMouse();
+    sldVolume.setFromMouse(vmx);
   }
 }
 
 void mouseReleased() {
+  if (sldVolume != null && sldVolume.dragging) {
+    sldVolume.dragging = false;
+    saveSettings("settings.txt");
+    return;
+  }
   if (!isAiming) return;
   isAiming = false;
   if (velocity > 4) launch();   // a tiny nudge cancels instead of firing
@@ -150,7 +175,7 @@ void keyPressed() {
   else                              exit();
 }
 
-// ── Game flow ──────────────────────────────────────────────────────────────────
+// -- Game flow --------------------------------------------------------------------
 
 void startGame() {
   screenId    = SCREEN_PLAY;
@@ -192,6 +217,7 @@ void launch() {
   flightTime = 0;
   recoilT    = 1;
   spawnBurst(muzzleX(), muzzleY(), ACCENT, 10, 2.2);
+  sfxLaunch();
 }
 
 void endFlight() {
@@ -208,13 +234,18 @@ void triggerGameOver() {
     highScore = score;
     saveHighScore();
     spawnRecordBurst(centreX, centreY - 130);
+    sfxRecord();
+  } else {
+    sfxGameOver();
   }
 }
 
 void handleGameOverClick() {
-  if (btnAgain.contains(mouseX, mouseY)) {
+  if (btnAgain.contains(vmx, vmy)) {
+    sfxClick();
     startGame();
-  } else if (btnMenuOver.contains(mouseX, mouseY)) {
+  } else if (btnMenuOver.contains(vmx, vmy)) {
+    sfxClick();
     toMenu();
   }
 }

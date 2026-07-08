@@ -1,0 +1,17 @@
+# Normalize line endings for text files
+* text=auto
+
+*.pde text
+*.md text
+*.svg text
+*.json text
+*.xml text
+*.txt text
+
+# Binary assets
+*.png binary
+*.otf binary
+*.ttf binary
+*.ico binary
+*.icns binary
+*.zip binary

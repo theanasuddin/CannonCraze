@@ -1,16 +1,22 @@
-// ── Ui — buttons, modal windows, settings widgets ──────────────────────────────
+// -- Ui: buttons, modal windows, settings widgets ---------------------------------
 
 final int ICON_MINUS = 0;
 final int ICON_PLUS  = 1;
 final int ICON_CLOSE = 2;
 
-// Modal geometry
-final float CARD_X = 480, CARD_Y = 300, CARD_W = 540, CARD_H = 392, CARD_R = 22;
+// Modal geometry. Settings carries more rows than the other cards, so each
+// modal picks its own height around the shared centre.
+final float CARD_X = 480, CARD_Y = 300, CARD_W = 540, CARD_R = 22;
+
+float modalHeight() {
+  return (modalId == MODAL_SETTINGS) ? 500 : 392;
+}
 
 IconBtn  icoClose, icoSizeMinus, icoSizePlus, icoTgtsMinus, icoTgtsPlus;
-UIToggle tglGuide;
+UIToggle tglGuide, tglSound;
+UISlider sldVolume;
 
-// ── Widgets ────────────────────────────────────────────────────────────────────
+// -- Widgets ------------------------------------------------------------------------
 
 class UIButton {
   float x, y, w, h;
@@ -30,7 +36,7 @@ class UIButton {
   }
 
   void render(boolean interactive) {
-    boolean hot = interactive && contains(mouseX, mouseY);
+    boolean hot = interactive && contains(vmx, vmy);
     if (hot) wantHand = true;
     hov = lerp(hov, hot ? 1 : 0, 0.22);
 
@@ -80,7 +86,7 @@ class IconBtn {
   }
 
   void render(boolean interactive, float alphaMul) {
-    boolean hot = interactive && enabled && contains(mouseX, mouseY);
+    boolean hot = interactive && enabled && contains(vmx, vmy);
     if (hot) wantHand = true;
     hov = lerp(hov, hot ? 1 : 0, 0.25);
 
@@ -122,7 +128,7 @@ class UIToggle {
   }
 
   void render(boolean interactive, float alphaMul) {
-    boolean hot = interactive && contains(mouseX, mouseY);
+    boolean hot = interactive && contains(vmx, vmy);
     if (hot) wantHand = true;
     anim = lerp(anim, on ? 1 : 0, 0.25);
 
@@ -144,7 +150,70 @@ class UIToggle {
   }
 }
 
-// ── Modal windows ──────────────────────────────────────────────────────────────
+// A draggable volume slider. The knob follows the mouse while dragging (state
+// driven from the sketch's mouse handlers) and a soft tick sounds at every five
+// percent step, so the loudness can be judged while it is being set.
+class UISlider {
+  float x, y, w;       // left end of the track, centre line, track width
+  boolean dragging = false;
+  float hov = 0;
+
+  UISlider(float x, float y, float w) {
+    this.x = x;  this.y = y;  this.w = w;
+  }
+
+  boolean contains(float mx, float my) {
+    return mx >= x - 12 && mx <= x + w + 12 && abs(my - y) <= 16;
+  }
+
+  void setFromMouse(float mx) {
+    float v = constrain((mx - x) / w, 0, 1);
+    int oldStep = round(soundVolume * 20);
+    soundVolume = v;
+    if (round(v * 20) != oldStep) sfxTick();
+  }
+
+  void render(boolean interactive, float alphaMul, boolean enabled) {
+    boolean hot = interactive && enabled && (dragging || contains(vmx, vmy));
+    if (hot) wantHand = true;
+    hov = lerp(hov, hot ? 1 : 0, 0.25);
+
+    float dimA = enabled ? 1 : 0.32;
+    float kx   = x + soundVolume * w;
+
+    pushStyle();
+    // track, then the filled portion up to the knob
+    stroke(PANEL_LINE, 80 * dimA * alphaMul);
+    strokeWeight(4);
+    line(x, y, x + w, y);
+    if (kx > x + 0.5) {
+      stroke(ACCENT, (150 + 70 * hov) * dimA * alphaMul);
+      line(x, y, kx, y);
+    }
+
+    // knob with a soft halo on hover / drag
+    noStroke();
+    if (hov > 0.02 && enabled) {
+      fill(ACCENT, 36 * hov * alphaMul);
+      circle(kx, y, 34);
+    }
+    fill(lerpColor(INK_DIM, INK, enabled ? 0.65 + 0.35 * hov : 0), 255 * dimA * alphaMul);
+    circle(kx, y, 18);
+    noFill();
+    stroke(ACCENT, (110 + 130 * hov) * dimA * alphaMul);
+    strokeWeight(1.2);
+    circle(kx, y, 18);
+
+    // live percentage rides under the knob
+    fill(INK_FAINT, 235 * dimA * alphaMul);
+    textFont(fontRegular, 9.5);
+    textAlign(CENTER, CENTER);
+    text(round(soundVolume * 100) + "%", kx, y + 21);
+    popStyle();
+  }
+}
+
+// -- Modal windows --------------------------------------------------------------------
 
 void openModal(int m) {
   modalId = m;
@@ -152,24 +221,30 @@ void openModal(int m) {
 }
 
 void closeModal() {
-  if (modalId == MODAL_SETTINGS) saveSettings("settings.txt");
+  if (modalId == MODAL_NONE) return;
+  if (modalId == MODAL_SETTINGS) {
+    if (sldVolume != null) sldVolume.dragging = false;
+    saveSettings("settings.txt");
+  }
   modalId = MODAL_NONE;
+  sfxClick();
 }
 
 void drawModal() {
   modalT = lerp(modalT, 1, 0.18);
   float e = easeOutCubic(modalT);
+  float cardH = modalHeight();
 
   pushStyle();
   rectMode(CORNER);
   noStroke();
   fill(SKY_TOP, 178 * e);
-  rect(0, 0, width, height);
+  rect(worldLeft(), worldTop(), worldW, worldH);
   popStyle();
 
   float cy      = CARD_Y + 16 * (1 - e);
-  float cardTop = cy - CARD_H / 2;
-  drawPanel(CARD_X, cy, CARD_W, CARD_H, CARD_R, e);
+  float cardTop = cy - cardH / 2;
+  drawPanel(CARD_X, cy, CARD_W, cardH, CARD_R, e);
 
   if      (modalId == MODAL_SETTINGS) drawSettingsModal(cardTop, e);
   else if (modalId == MODAL_HELP)     drawHelpModal(cardTop, e);
@@ -191,22 +266,27 @@ void drawModalTitle(String title, float cardTop, float e) {
   popStyle();
 }
 
-// ── Settings ───────────────────────────────────────────────────────────────────
+// -- Settings ---------------------------------------------------------------------------
 
 void drawSettingsModal(float cardTop, float e) {
   drawModalTitle("SETTINGS", cardTop, e);
 
-  float rowSize = cardTop + 136;
-  float rowTgts = cardTop + 200;
-  float rowGde  = cardTop + 264;
+  float rowSize = cardTop + 124;
+  float rowTgts = cardTop + 182;
+  float rowGde  = cardTop + 240;
+  float rowSnd  = cardTop + 298;
+  float rowVol  = cardTop + 356;
   float labelX  = CARD_X - CARD_W / 2 + 62;
 
   pushStyle();
   textFont(fontRegular, 12.5);
   fill(INK_DIM, 255 * e);
-  trackedTextL("CANNONBALL SIZE", labelX, rowSize, 2);
-  trackedTextL("TARGETS",         labelX, rowTgts, 2);
+  trackedTextL("CANNONBALL SIZE",  labelX, rowSize, 2);
+  trackedTextL("TARGETS",          labelX, rowTgts, 2);
   trackedTextL("TRAJECTORY GUIDE", labelX, rowGde, 2);
+  trackedTextL("SOUND",            labelX, rowSnd, 2);
+  fill(INK_DIM, (soundOn ? 255 : 110) * e);
+  trackedTextL("VOLUME",           labelX, rowVol, 2);
 
   textAlign(CENTER, CENTER);
   textFont(fontBold, 20);
@@ -216,13 +296,16 @@ void drawSettingsModal(float cardTop, float e) {
 
   textFont(fontRegular, 9.5);
   fill(INK_FAINT, 220 * e);
-  trackedTextC("CHANGES SAVE AUTOMATICALLY", CARD_X, cardTop + 338, 3);
+  trackedTextC("CHANGES SAVE AUTOMATICALLY", CARD_X, cardTop + 446, 3);
   popStyle();
 
   icoSizeMinus.y = rowSize;  icoSizePlus.y = rowSize;
   icoTgtsMinus.y = rowTgts;  icoTgtsPlus.y = rowTgts;
   tglGuide.y     = rowGde;
+  tglSound.y     = rowSnd;
+  sldVolume.y    = rowVol;
   tglGuide.on    = !guidelineHidden;
+  tglSound.on    = soundOn;
 
   icoSizeMinus.enabled = ballRadius  > BALL_RADIUS_MIN;
   icoSizePlus.enabled  = ballRadius  < BALL_RADIUS_MAX;
@@ -235,13 +318,15 @@ void drawSettingsModal(float cardTop, float e) {
   icoTgtsMinus.render(live, e);
   icoTgtsPlus.render(live, e);
   tglGuide.render(live, e);
+  tglSound.render(live, e);
+  sldVolume.render(live, e, soundOn);
 }
 
-// ── Help ───────────────────────────────────────────────────────────────────────
+// -- Help --------------------------------------------------------------------------------
 
 final String[] HELP_STEPS = {
   "Grab the glowing cannonball at the muzzle.",
-  "Pull back — distance sets power, direction sets angle.",
+  "Pull back. Distance sets power, direction sets angle.",
   "Release to fire the shot.",
   "Land on the lit pad to score and keep the run alive.",
   "One miss ends the run. Beat your best score."
@@ -264,7 +349,7 @@ void drawHelpModal(float cardTop, float e) {
   popStyle();
 }
 
-// ── Credits ────────────────────────────────────────────────────────────────────
+// -- Credits -----------------------------------------------------------------------------
 
 void drawCreditsModal(float cardTop, float e) {
   drawModalTitle("CREDITS", cardTop, e);
@@ -284,29 +369,38 @@ void drawCreditsModal(float cardTop, float e) {
   btnGithub.render(modalT > 0.5);
 }
 
-// ── Modal input ────────────────────────────────────────────────────────────────
+// -- Modal input ---------------------------------------------------------------------------
 
 void handleModalClick() {
   // Click outside the card dismisses it
-  if (abs(mouseX - CARD_X) > CARD_W / 2 + 4 || abs(mouseY - CARD_Y) > CARD_H / 2 + 20) {
+  if (abs(vmx - CARD_X) > CARD_W / 2 + 4 || abs(vmy - CARD_Y) > modalHeight() / 2 + 20) {
     closeModal();
     return;
   }
 
-  if (icoClose.contains(mouseX, mouseY)) {
+  if (icoClose.contains(vmx, vmy)) {
     closeModal();
     return;
   }
 
   if (modalId == MODAL_SETTINGS) {
-    if      (icoSizeMinus.contains(mouseX, mouseY)) ballRadius = max(ballRadius - 1, BALL_RADIUS_MIN);
-    else if (icoSizePlus.contains(mouseX, mouseY))  ballRadius = min(ballRadius + 1, BALL_RADIUS_MAX);
-    else if (icoTgtsMinus.contains(mouseX, mouseY)) targetCount = max(targetCount - 1, TARGETS_MIN);
-    else if (icoTgtsPlus.contains(mouseX, mouseY))  targetCount = min(targetCount + 1, TARGETS_MAX);
-    else if (tglGuide.contains(mouseX, mouseY))     guidelineHidden = !guidelineHidden;
+    if      (icoSizeMinus.contains(vmx, vmy)) { ballRadius  = max(ballRadius - 1, BALL_RADIUS_MIN);  sfxClick(); }
+    else if (icoSizePlus.contains(vmx, vmy))  { ballRadius  = min(ballRadius + 1, BALL_RADIUS_MAX);  sfxClick(); }
+    else if (icoTgtsMinus.contains(vmx, vmy)) { targetCount = max(targetCount - 1, TARGETS_MIN);     sfxClick(); }
+    else if (icoTgtsPlus.contains(vmx, vmy))  { targetCount = min(targetCount + 1, TARGETS_MAX);     sfxClick(); }
+    else if (tglGuide.contains(vmx, vmy))     { guidelineHidden = !guidelineHidden;                  sfxToggle(); }
+    else if (tglSound.contains(vmx, vmy))     { soundOn = !soundOn;                                  sfxToggle(); }
+    else if (soundOn && sldVolume.contains(vmx, vmy)) {
+      sldVolume.dragging = true;
+      sldVolume.setFromMouse(vmx);
+      return;   // saved on release, once the drag settles
+    }
     else return;
     saveSettings("settings.txt");
   } else if (modalId == MODAL_CREDITS) {
-    if (btnGithub.contains(mouseX, mouseY)) link("https://github.com/theanasuddin");
+    if (btnGithub.contains(vmx, vmy)) {
+      sfxClick();
+      link("https://github.com/theanasuddin");
+    }
   }
 }

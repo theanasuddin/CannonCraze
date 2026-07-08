@@ -1,4 +1,4 @@
-// ── Persistence — settings and high score ──────────────────────────────────────
+// -- Persistence: settings and high score -----------------------------------------
 
 int loadHighScore(String fileName) {
   try {
@@ -16,6 +16,10 @@ void saveHighScore() {
   }
 }
 
+// Settings file, one value per line. Older files with fewer lines load fine:
+// anything missing keeps its default.
+//   1  target count          2  guide hidden flag     3  ball radius
+//   4  sound on flag         5  volume (0 to 100)
 void loadSettings(String fileName) {
   try {
     String[] lines = loadStrings(fileName);
@@ -23,6 +27,8 @@ void loadSettings(String fileName) {
     if (lines.length >= 1) targetCount     = constrain(int(lines[0]), TARGETS_MIN, TARGETS_MAX);
     if (lines.length >= 2) guidelineHidden = "true".equals(lines[1]);
     if (lines.length >= 3) ballRadius      = constrain(int(lines[2]), BALL_RADIUS_MIN, BALL_RADIUS_MAX);
+    if (lines.length >= 4) soundOn         = !"false".equals(lines[3]);
+    if (lines.length >= 5) soundVolume     = constrain(int(lines[4]), 0, 100) / 100.0;
   } catch (Exception e) { /* keep defaults */ }
 }
 
@@ -31,7 +37,9 @@ void saveSettings(String fileName) {
     saveStrings("data/" + fileName, new String[] {
       str(targetCount),
       guidelineHidden ? "true" : "false",
-      str(int(ballRadius))
+      str(int(ballRadius)),
+      soundOn ? "true" : "false",
+      str(round(soundVolume * 100))
     });
   } catch (Exception e) {
     e.printStackTrace();

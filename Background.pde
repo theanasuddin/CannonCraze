@@ -1,10 +1,15 @@
-// ── Background — night-sky scene shared by every screen ────────────────────────
-// The static parts (sky gradient, nebula glows, planet, mountains) render once
-// into a buffer; stars twinkle and meteors streak on top each frame.
+// -- Background: night-sky scene shared by every screen --------------------------
+// The static parts (sky gradient, nebula glows, planet, mountains) render into
+// a buffer sized to the window's real pixels and covering the whole extended
+// world, so the scene stays crisp and bar-free at any window size; stars
+// twinkle and meteors streak on top each frame.
 
 PGraphics bgScene;
+int bgSceneW = -1;   // window pixel size the buffer was rendered at; -1 forces a build
+int bgSceneH = -1;
 
-final int STAR_COUNT = 150;
+final int STAR_COUNT = 220;
+int starCount = 0;   // how many of the slots are in use at the current world size
 float[] starX  = new float[STAR_COUNT];
 float[] starY  = new float[STAR_COUNT];
 float[] starSz = new float[STAR_COUNT];
@@ -18,19 +23,30 @@ boolean mtActive = false;
 float   mtX, mtY, mtVX, mtVY, mtAge, mtLife;
 float   meteorTimer = 5;
 
-void buildBackground() {
-  bgScene = createGraphics(width, height);
+// Renders the static scene for the current window. The gradient is drawn in
+// pixel space (one line per pixel row) and mapped through the viewport so the
+// horizon stays glued to the design region; everything else draws in canvas
+// coordinates under the viewport transform, so it upscales as geometry, not
+// pixels, and the mountains and ground stretch to the world edges.
+void rebuildBackground() {
+  int pw = max(1, width);
+  int ph = max(1, height);
+  bgScene = createGraphics(pw, ph);
   bgScene.beginDraw();
 
-  for (int y = 0; y < height; y++) {
-    float f = y / (float) height;
+  for (int y = 0; y < ph; y++) {
+    float f = constrain((y / viewS - offY) / VIEW_H, 0, 1);
     color c = (f < 0.55)
       ? lerpColor(SKY_TOP, SKY_MID, f / 0.55)
       : lerpColor(SKY_MID, SKY_HORIZON, (f - 0.55) / 0.45);
     bgScene.stroke(c);
-    bgScene.line(0, y, width, y);
+    bgScene.line(0, y, pw, y);
   }
   bgScene.noStroke();
+
+  bgScene.pushMatrix();
+  bgScene.scale(viewS);
+  bgScene.translate(offX, offY);
 
   radialGlow(bgScene, 240, 130, 330, VIOLET, 8);
   radialGlow(bgScene, 820, 330, 380, ACCENT_DEEP, 6);
@@ -42,16 +58,28 @@ void buildBackground() {
   drawRidge(bgScene, 516, 48, 0.0060, 57, MOUNT_NEAR);
   bgScene.noStroke();
   bgScene.fill(GROUND);
-  bgScene.rect(0, 568, width, height - 568);
+  bgScene.rect(worldLeft() - 2, 568, worldW + 4, worldBottom() - 568 + 2);
 
+  bgScene.popMatrix();
   bgScene.endDraw();
+  bgSceneW = pw;
+  bgSceneH = ph;
 
+  rebuildStars();
+}
+
+// Stars cover the whole world, not just the design region, and always land in
+// the same places for a given world size thanks to the fixed seed.
+void rebuildStars() {
   randomSeed(7);
-  for (int i = 0; i < STAR_COUNT; i++) {
+  float wl = worldLeft(), wr = worldRight(), wt = worldTop();
+  float area = (wr - wl) * (430 - wt);
+  starCount = constrain(round(area / (960.0 * 430.0) * 150), 40, STAR_COUNT);
+  for (int i = 0; i < starCount; i++) {
     float x, y;
     do {
-      x = random(width);
-      y = random(430);
+      x = random(wl, wr);
+      y = random(wt, 430);
     } while (dist(x, y, PLANET_X, PLANET_Y) < PLANET_R * 2.4);
     starX[i]  = x;
     starY[i]  = y;
@@ -105,21 +133,25 @@ void drawPlanet(PGraphics g, float x, float y, float r) {
 }
 
 void drawRidge(PGraphics g, float baseY, float amp, float freq, float seedOff, color c) {
+  float wl = worldLeft() - 2, wr = worldRight() + 2, wb = worldBottom() + 2;
   g.noStroke();
   g.fill(c);
   g.beginShape();
-  g.vertex(-2, height + 2);
-  for (float x = -2; x <= width + 2; x += 5) {
-    g.vertex(x, baseY - noise(x * freq + seedOff) * amp);
+  g.vertex(wl, wb);
+  for (float x = wl; x <= wr; x += 5) {
+    // +2000 keeps the noise domain positive, so wide windows never hit the
+    // mirror fold Processing's noise() applies at zero
+    g.vertex(x, baseY - noise((x + 2000) * freq + seedOff) * amp);
   }
-  g.vertex(width + 2, height + 2);
+  g.vertex(wr, wb);
   g.endShape(CLOSE);
 }
 
-// ── Per-frame layer ────────────────────────────────────────────────────────────
+// -- Per-frame layer --------------------------------------------------------------
+// The static buffer itself is blitted once per frame in beginViewport, in screen
+// space, so only the animated layers draw here.
 
 void drawBackground() {
-  image(bgScene, 0, 0);
   drawStars();
   updateMeteor();
 }
@@ -128,7 +160,7 @@ void drawStars() {
   pushStyle();
   noStroke();
   float t = tSec();
-  for (int i = 0; i < STAR_COUNT; i++) {
+  for (int i = 0; i < starCount; i++) {
     float tw = 0.6 + 0.4 * sin(t * starSp[i] * 2.2 + starPh[i]);
     float a  = (60 + 130 * (starSz[i] / 2.4)) * tw;
     fill(#DDE6FF, a);
@@ -150,8 +182,8 @@ void updateMeteor() {
     meteorTimer -= 1 / 60.0;
     if (meteorTimer <= 0) {
       mtActive = true;
-      mtX    = random(300, 940);
-      mtY    = random(20, 130);
+      mtX    = random(300, worldRight() - 20);
+      mtY    = random(worldTop() + 20, 130);
       float sp = random(6, 9);
       mtVX   = -sp * 0.92;
       mtVY   =  sp * 0.40;

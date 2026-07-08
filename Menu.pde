@@ -1,4 +1,4 @@
-// ── Main menu ──────────────────────────────────────────────────────────────────
+// -- Main menu ---------------------------------------------------------------------
 
 UIButton[] menuBtns;
 UIButton btnAgain, btnMenuOver, btnGithub;
@@ -21,6 +21,8 @@ void initUi() {
   icoTgtsMinus  = new IconBtn(566, 292, ICON_MINUS);
   icoTgtsPlus   = new IconBtn(664, 292, ICON_PLUS);
   tglGuide      = new UIToggle(637, 352);
+  tglSound      = new UIToggle(637, 412);
+  sldVolume     = new UISlider(520, 472, 190);
 }
 
 void drawMenu() {
@@ -72,9 +74,9 @@ void drawMenuFooter() {
 }
 
 void handleMenuClick() {
-  if      (menuBtns[0].contains(mouseX, mouseY)) startGame();
-  else if (menuBtns[1].contains(mouseX, mouseY)) openModal(MODAL_SETTINGS);
-  else if (menuBtns[2].contains(mouseX, mouseY)) openModal(MODAL_HELP);
-  else if (menuBtns[3].contains(mouseX, mouseY)) openModal(MODAL_CREDITS);
-  else if (menuBtns[4].contains(mouseX, mouseY)) exit();
+  if      (menuBtns[0].contains(vmx, vmy)) { sfxClick(); startGame(); }
+  else if (menuBtns[1].contains(vmx, vmy)) { sfxClick(); openModal(MODAL_SETTINGS); }
+  else if (menuBtns[2].contains(vmx, vmy)) { sfxClick(); openModal(MODAL_HELP); }
+  else if (menuBtns[3].contains(vmx, vmy)) { sfxClick(); openModal(MODAL_CREDITS); }
+  else if (menuBtns[4].contains(vmx, vmy)) exit();
 }

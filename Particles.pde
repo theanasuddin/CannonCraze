@@ -1,4 +1,4 @@
-// ── Particles — sparks, trails, shockwave rings, floating score text ───────────
+// -- Particles: sparks, trails, shockwave rings, floating score text -----------
 
 final int P_SPARK = 0;
 final int P_TRAIL = 1;

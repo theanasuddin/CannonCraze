@@ -1,4 +1,4 @@
-// ── Gameplay — cannon, aiming, flight, targets, HUD, game-over overlay ─────────
+// -- Gameplay: cannon, aiming, flight, targets, HUD, game-over overlay -----------
 
 void drawGameplay() {
   drawBackground();
@@ -34,17 +34,24 @@ void drawGameplay() {
   }
 }
 
-// ── Platform / cannon ──────────────────────────────────────────────────────────
+// -- Platform / cannon --------------------------------------------------------------
 
 void drawPlatform() {
+  // The platform is anchored to the design region but pours out to the world's
+  // left and bottom edges so wide or tall windows never show a floating slab.
+  // The slanted face keeps the same slope it has inside the design region.
+  float wl = worldLeft() - 2;
+  float wb = worldBottom() + 2;
+  float slantX = 168 + (232 - 168) / (VIEW_H + 2 - PLATFORM_TOP) * (wb - PLATFORM_TOP);
+
   pushStyle();
   noStroke();
   fill(#0D0A2C);
-  quad(-2, PLATFORM_TOP, 168, PLATFORM_TOP, 232, height + 2, -2, height + 2);
-  glowLine(-2, PLATFORM_TOP, 168, PLATFORM_TOP, ACCENT, 1.4, 70);
+  quad(wl, PLATFORM_TOP, 168, PLATFORM_TOP, slantX, wb, wl, wb);
+  glowLine(wl, PLATFORM_TOP, 168, PLATFORM_TOP, ACCENT, 1.4, 70);
   stroke(ACCENT, 36);
   strokeWeight(1.2);
-  line(168, PLATFORM_TOP, 232, height);
+  line(168, PLATFORM_TOP, slantX, wb);
   popStyle();
 }
 
@@ -92,10 +99,10 @@ float restBallY() { return CANNON_Y + sin(barrelAngle) * (BARREL_LEN + ballRadiu
 
 boolean overGrabZone() {
   return !isGameOver
-      && dist(mouseX, mouseY, restBallX(), restBallY()) <= max(ballRadius + 12, 26);
+      && dist(vmx, vmy, restBallX(), restBallY()) <= max(ballRadius + 12, 26);
 }
 
-// ── Ball rendering ─────────────────────────────────────────────────────────────
+// -- Ball rendering -------------------------------------------------------------
 
 void drawBall(float x, float y) {
   pushStyle();
@@ -121,11 +128,11 @@ void drawIdleBall() {
   popStyle();
 }
 
-// ── Aiming ─────────────────────────────────────────────────────────────────────
+// -- Aiming ---------------------------------------------------------------------
 
 void updateAim() {
-  float ax = min(mouseX, CANNON_X - 0.01);
-  float ay = max(mouseY, CANNON_Y + 0.01);
+  float ax = min(vmx, CANNON_X - 0.01);
+  float ay = max(vmy, CANNON_Y + 0.01);
 
   angle = atan2(ay - CANNON_Y, ax - CANNON_X);
   float d = dist(ax, ay, CANNON_X, CANNON_Y);
@@ -169,7 +176,7 @@ void drawTrajectory() {
     float t  = i * 0.32;
     float px = CANNON_X - vx * t;
     float py = GRAVITY * t * t - vy * t + CANNON_Y;
-    if (py > TARGET_ROW_Y + 8 || px > width + 20) break;
+    if (py > TARGET_ROW_Y + 8 || px > worldRight() + 20) break;
     float f = 1 - i / (float) n;
     fill(ACCENT, 20 + 150 * f);
     circle(px, py, 2 + 5.2 * f);
@@ -177,7 +184,7 @@ void drawTrajectory() {
   popStyle();
 }
 
-// ── Flight ─────────────────────────────────────────────────────────────────────
+// -- Flight ---------------------------------------------------------------------
 
 void updateProjectile() {
   float t  = flightTime;
@@ -190,8 +197,8 @@ void updateProjectile() {
   drawBall(px, py);
   flightTime += 0.1;
 
-  // Complete miss — fell past the bottom of the screen
-  if (py > height + ballRadius) {
+  // Complete miss: fell past the bottom of the window
+  if (py > worldBottom() + ballRadius) {
     endFlight();
     triggerGameOver();
     return;
@@ -212,6 +219,7 @@ void updateProjectile() {
     int   cell  = constrain(int((px - TARGET_X) / cellW), 0, targetCount - 1);
     if (cell == targetIndex) {
       score++;
+      sfxHit(score);
       scorePop  = 1;
       padFlash  = 1;
       padFlashX = TARGET_X + cell * cellW;
@@ -227,7 +235,7 @@ void updateProjectile() {
   }
 }
 
-// ── Targets ────────────────────────────────────────────────────────────────────
+// -- Targets --------------------------------------------------------------------
 
 void drawTargets() {
   float cellW = TARGET_W / targetCount;
@@ -281,7 +289,7 @@ void drawLightColumn(float cx, float bottomY, float w, float h, float maxAlpha) 
   popStyle();
 }
 
-// ── HUD ────────────────────────────────────────────────────────────────────────
+// -- HUD ------------------------------------------------------------------------
 
 void drawHUD() {
   pushStyle();
@@ -330,7 +338,7 @@ void drawReadouts() {
   popStyle();
 }
 
-// ── Game-over overlay ──────────────────────────────────────────────────────────
+// -- Game-over overlay ----------------------------------------------------------
 
 void drawGameOverOverlay() {
   overlayT = lerp(overlayT, 1, 0.14);
@@ -340,7 +348,7 @@ void drawGameOverOverlay() {
   rectMode(CORNER);
   noStroke();
   fill(SKY_TOP, 205 * e);
-  rect(0, 0, width, height);
+  rect(worldLeft(), worldTop(), worldW, worldH);
   popStyle();
 
   float cy = centreY + 16 * (1 - e);
