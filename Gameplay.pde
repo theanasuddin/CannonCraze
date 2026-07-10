@@ -7,7 +7,7 @@ void drawGameplay() {
   if (shakeT > 0.01) {
     float m = 7 * shakeT * shakeT;
     translate(random(-m, m), random(-m, m));
-    shakeT = lerp(shakeT, 0, 0.09);
+    shakeT = lerp(shakeT, 0, expK(0.09));
   }
 
   if (isAiming) updateAim();
@@ -57,8 +57,8 @@ void drawPlatform() {
 
 void drawCannon() {
   float targetA = isAiming ? angle - PI : (isInFlight ? barrelAngle : -QUARTER_PI);
-  barrelAngle = lerp(barrelAngle, targetA, 0.3);
-  recoilT     = max(0, recoilT - 0.07);
+  barrelAngle = lerp(barrelAngle, targetA, expK(0.3));
+  recoilT     = max(0, recoilT - 0.07 * nf);
 
   pushStyle();
   pushMatrix();
@@ -185,8 +185,31 @@ void drawTrajectory() {
 }
 
 // -- Flight ---------------------------------------------------------------------
+// Fixed-step integration on the real clock. The flight always advances in the
+// same 0.1-unit samples it did before (exactly one per frame at 60 fps), but
+// the number of samples per frame follows real elapsed time. A device stuck
+// at 30 fps takes two samples per frame instead of playing in slow motion,
+// a 120 Hz display takes one every other frame instead of fast-forwarding,
+// and collision checks can never skip past the pad row.
 
 void updateProjectile() {
+  flightAcc += 6.0 * dtSec;                             // 0.1 units per 60th of a second
+  int guard = 0;
+  while (isInFlight && flightAcc >= 0.1 && guard++ < 8) {
+    flightAcc -= 0.1;
+    stepFlight();
+  }
+  if (flightAcc >= 0.1) flightAcc = 0;                  // shed backlog after a huge hitch
+
+  if (isInFlight) {
+    float vx = velocity * cos(angle);
+    float vy = velocity * sin(angle);
+    drawBall(CANNON_X - vx * flightTime,
+             GRAVITY * flightTime * flightTime - vy * flightTime + CANNON_Y);
+  }
+}
+
+void stepFlight() {
   float t  = flightTime;
   float vx = velocity * cos(angle);
   float vy = velocity * sin(angle);
@@ -194,7 +217,6 @@ void updateProjectile() {
   float py = GRAVITY * t * t - vy * t + CANNON_Y;
 
   spawnTrail(px, py, ballRadius * 0.9);
-  drawBall(px, py);
   flightTime += 0.1;
 
   // Complete miss: fell past the bottom of the window
@@ -270,7 +292,7 @@ void drawTargets() {
     noStroke();
     fill(255, 190 * padFlash);
     rect(padFlashX + gap / 2, TARGET_ROW_Y, padFlashW - gap, TARGET_H, 5);
-    padFlash = max(0, padFlash - 0.05);
+    padFlash = max(0, padFlash - 0.05 * nf);
   }
   popStyle();
 }
@@ -279,7 +301,7 @@ void drawLightColumn(float cx, float bottomY, float w, float h, float maxAlpha) 
   pushStyle();
   rectMode(CORNER);
   noStroke();
-  int slices = 30;
+  int slices = qColumnSlices();
   for (int i = 0; i < slices; i++) {
     float f = i / (float) slices;             // 0 at pad → 1 at top
     fill(ACCENT, maxAlpha * (1 - f) * (1 - f));
@@ -299,7 +321,7 @@ void drawHUD() {
   trackedTextL("SCORE", 36, 40, 3);
   trackedTextR("BEST", 924, 40, 3);
 
-  scorePop = max(0, scorePop - 0.05);
+  scorePop = max(0, scorePop - 0.05 * nf);
   float s = 1 + 0.4 * easeOutCubic(scorePop);
   pushMatrix();
   translate(37, 72);
@@ -341,7 +363,7 @@ void drawReadouts() {
 // -- Game-over overlay ----------------------------------------------------------
 
 void drawGameOverOverlay() {
-  overlayT = lerp(overlayT, 1, 0.14);
+  overlayT = lerp(overlayT, 1, expK(0.14));
   float e = easeOutCubic(overlayT);
 
   pushStyle();

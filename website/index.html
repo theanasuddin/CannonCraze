@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Primary SEO -->
+  <title>Cannon Craze — Free Neon Arcade Cannon Game for Windows, macOS, Linux &amp; Android</title>
+  <meta name="description" content="Cannon Craze is a free, open-source neon-noir arcade cannon game. Pull the glowing cannonball back like a slingshot, release to fire, land on the lit pad — one miss ends the run. Download for Windows, macOS, Linux and Android.">
+  <meta name="keywords" content="Cannon Craze, arcade game, cannon game, slingshot game, free game, open source game, neon game, Processing game, Windows game, macOS game, Linux game, Android game, offline game, no ads">
+  <meta name="author" content="Anas Uddin">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#030210">
+  <link rel="canonical" href="https://cannoncraze.vercel.app/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Cannon Craze">
+  <meta property="og:title" content="Cannon Craze — Free Neon Arcade Cannon Game">
+  <meta property="og:description" content="Pull the glowing cannonball back like a slingshot, release to fire, land on the lit pad. One miss ends the run. Free on Windows, macOS, Linux and Android.">
+  <meta property="og:url" content="https://cannoncraze.vercel.app/">
+  <meta property="og:image" content="https://cannoncraze.vercel.app/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Cannon Craze — a neon cannon fires a glowing ball across a night sky">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cannon Craze — Free Neon Arcade Cannon Game">
+  <meta name="twitter:description" content="Pull. Aim. Release. A merciless one-more-try arcade game, free on Windows, macOS, Linux and Android.">
+  <meta name="twitter:image" content="https://cannoncraze.vercel.app/assets/og-image.png">
+
+  <!-- Icons / manifest -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32.png">
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <!-- Performance -->
+  <link rel="preload" href="/assets/fonts/montserrat-bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/montserrat-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "VideoGame",
+        "@id": "https://cannoncraze.vercel.app/#game",
+        "name": "Cannon Craze",
+        "url": "https://cannoncraze.vercel.app/",
+        "image": "https://cannoncraze.vercel.app/assets/og-image.png",
+        "screenshot": [
+          "https://cannoncraze.vercel.app/assets/screens/gameplay.webp",
+          "https://cannoncraze.vercel.app/assets/screens/aiming.webp",
+          "https://cannoncraze.vercel.app/assets/screens/menu.webp"
+        ],
+        "description": "A minimal, neon-noir arcade cannon game. Pull the glowing cannonball back like a slingshot, release to fire, and land on the lit pad. One miss ends the run.",
+        "genre": ["Arcade", "Casual", "Physics"],
+        "gamePlatform": ["Windows", "macOS", "Linux", "Android"],
+        "operatingSystem": "Windows 10, Windows 11, macOS, Linux, Android 5.0+",
+        "applicationCategory": "GameApplication",
+        "playMode": "SinglePlayer",
+        "inLanguage": "en",
+        "softwareVersion": "1.1.0",
+        "dateModified": "2026-07-10",
+        "license": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+        "author": {
+          "@type": "Person",
+          "name": "Anas Uddin",
+          "url": "https://github.com/theanasuddin"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://cannoncraze.vercel.app/#website",
+        "url": "https://cannoncraze.vercel.app/",
+        "name": "Cannon Craze",
+        "publisher": { "@type": "Person", "name": "Anas Uddin" },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://cannoncraze.vercel.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is Cannon Craze free?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Cannon Craze is completely free and open source under the GPL-2.0 license. There are no ads, no purchases, and no accounts." }
+          },
+          {
+            "@type": "Question",
+            "name": "Which platforms does Cannon Craze run on?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Windows 10/11, macOS (Apple Silicon and Intel), Linux (x64, ARM64 and ARM32 including Raspberry Pi), and Android 5.0 or newer. A Google Play release is in progress; a direct APK is available today." }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does Windows SmartScreen warn me when I run the game?",
+            "acceptedAnswer": { "@type": "Answer", "text": "The Windows build is not code-signed with a paid certificate, so SmartScreen shows a caution for any new download. Click More info, then Run anyway. The full source code is public on GitHub if you want to verify what you are running." }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need to install Java?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Windows: no, the download bundles its own Java runtime. macOS and Linux: yes, install any free Java 17 or newer runtime, for example Temurin from Adoptium — it takes about a minute." }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Cannon Craze work offline and collect any data?",
+            "acceptedAnswer": { "@type": "Answer", "text": "The game is fully offline, requests zero permissions, contains no ads or analytics, and collects no data at all. Your best score and settings are saved only on your device." }
+          },
+          {
+            "@type": "Question",
+            "name": "Will it run on a low-end PC or phone?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. The game measures its own frame rate and automatically scales visual effects to fit the hardware, and its physics run on a real-time clock so gameplay speed stays correct even on weak devices. On Android, if the graphics driver fails to start the game twice, it automatically switches to a software renderer and opens anyway." }
+          },
+          {
+            "@type": "Question",
+            "name": "Where is my high score saved?",
+            "acceptedAnswer": { "@type": "Answer", "text": "On desktop it is a small text file in the data folder next to the game. On Android it lives in the app's private storage. Nothing ever leaves your device." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ======================= Nav ======================= -->
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a class="nav-brand" href="#top" aria-label="Cannon Craze home">
+        <img src="/assets/icons/logo.svg" alt="" width="30" height="24">
+        <span>CANNON&nbsp;<span class="accent">CRAZE</span></span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#screenshots">Screenshots</a></li>
+        <li><a href="#how-to-play">How to play</a></li>
+        <li><a href="#requirements">Requirements</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a class="btn btn-primary btn-small" href="#download">Download free</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ======================= Hero ======================= -->
+    <section class="hero" id="top">
+      <canvas id="starfield" aria-hidden="true"></canvas>
+      <div class="container">
+        <img class="hero-crest" src="/assets/icons/logo.svg" alt="" width="84" height="68">
+        <h1>CANNON&nbsp;<span class="accent">CRAZE</span></h1>
+        <p class="hero-tagline">Pull&ensp;·&ensp;Aim&ensp;·&ensp;Release</p>
+        <p class="hero-copy">
+          A minimal, neon-noir arcade cannon game. Drag the glowing cannonball back
+          like a slingshot, release to fire, and land on the lit pad below.
+          One miss — any miss — ends the run.
+        </p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" id="heroDownload" href="#download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 21h16"/></svg>
+            <span id="heroDownloadLabel">Download free</span>
+          </a>
+          <a class="btn btn-ghost" href="#screenshots">See it in motion</a>
+        </div>
+        <p class="hero-sub" id="heroSub">Free &amp; open source · Windows, macOS, Linux &amp; Android</p>
+        <ul class="hero-badges">
+          <li>No ads</li>
+          <li>No accounts</li>
+          <li>Fully offline</li>
+          <li>Zero permissions</li>
+          <li>GPL-2.0 open source</li>
+        </ul>
+        <figure class="hero-shot reveal">
+          <img src="/assets/screens/aiming.webp" alt="Cannon Craze gameplay: aiming the cannon with a dotted trajectory guide across a starry night sky" width="960" height="600" fetchpriority="high">
+        </figure>
+      </div>
+    </section>
+
+    <!-- ======================= Features ======================= -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Why you'll retry “just one more time”</span>
+          <h2>Simple to grab. Merciless to master.</h2>
+          <p>The whole game is one perfect gesture — but behind it sits a world drawn and heard entirely from code.</p>
+        </div>
+        <div class="features-grid">
+          <article class="card reveal">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c4-1 6-3 7-7m0 0c.5-2.5 2-6 6-9 1 4-.5 8-3 10.5M11 13l3.5 3.5M8 16l-2 2"/></svg></div>
+            <h3>Slingshot aiming</h3>
+            <p>Pull distance is power, pull direction is angle, and the dotted preview shows the exact parabola you're about to commit to. What you see is precisely what you get.</p>
+          </article>
+          <article class="card reveal">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+            <h3>One-miss runs</h3>
+            <p>Land on the lit pad to score and keep going — a new pad lights up every hit. Land anywhere else, overshoot, or undershoot, and the run is instantly over.</p>
+          </article>
+          <article class="card reveal">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.6L20 10l-5 3.6L16.5 20 12 16.5 7.5 20 9 13.6 4 10l6.1-1.4z"/></svg></div>
+            <h3>Everything is procedural</h3>
+            <p>The gradient sky, twinkling stars, ringed planet, drifting meteors, mountain silhouettes — and every sound effect, synthesized from pure math. No art files. No audio files. Only code.</p>
+          </article>
+          <article class="card reveal">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 4 14h6l-1 7 9-11h-6z"/></svg></div>
+            <h3>Adaptive performance</h3>
+            <p>The game watches its own frame rate and scales the visual garnish to fit your hardware, from a Raspberry Pi to a 120&nbsp;Hz display — while physics run on a real-time clock, so the game never plays in slow motion.</p>
+          </article>
+          <article class="card reveal">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M8 21h8m-4-3v3"/></svg></div>
+            <h3>Every screen, every size</h3>
+            <p>Resize, maximize, or go fullscreen mid-run: the world extends to fill every pixel with no black bars, the visuals stay razor sharp at any resolution, and the gameplay geometry never changes.</p>
+          </article>
+          <article class="card reveal">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V7z"/><path d="m9 12 2 2 4-4"/></svg></div>
+            <h3>Private by design</h3>
+            <p>Fully offline. Zero permissions. No ads, no analytics, no accounts, no tracking of any kind. Your best score lives on your device and nowhere else.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= Screenshots ======================= -->
+    <section class="section center" id="screenshots">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Screenshots</span>
+          <h2>A living night sky, drawn by code</h2>
+          <p>Every frame below is captured directly from the game. Click any shot to enlarge.</p>
+        </div>
+        <div class="gallery" id="gallery">
+          <button type="button" data-caption="The main menu under a living night sky"><img loading="lazy" src="/assets/screens/menu.webp" alt="Cannon Craze main menu with neon logo, pill buttons, ringed planet and starfield" width="960" height="600"></button>
+          <button type="button" data-caption="The arena — score, best, and the row of target pads"><img loading="lazy" src="/assets/screens/gameplay.webp" alt="Gameplay arena with the neon platform, cannon, and a row of target pads, one lit with a rising column of light" width="960" height="600"></button>
+          <button type="button" data-caption="Aiming — the elastic pull and the dotted trajectory guide"><img loading="lazy" src="/assets/screens/aiming.webp" alt="Aiming the shot with a taut elastic line, ghost ball, dotted trajectory preview and live angle and power readout" width="960" height="600"></button>
+          <button type="button" data-caption="In flight — a comet tail of fading cyan"><img loading="lazy" src="/assets/screens/flight.webp" alt="The cannonball in flight across the night sky trailing a glowing cyan comet tail" width="960" height="600"></button>
+          <button type="button" data-caption="New record — gold confetti and an instant save"><img loading="lazy" src="/assets/screens/newrecord.webp" alt="New record celebration card in gold with confetti burst" width="960" height="600"></button>
+          <button type="button" data-caption="Game over — a glass card against the dimmed arena"><img loading="lazy" src="/assets/screens/gameover.webp" alt="Game over overlay showing the final score against the best score with play again and menu buttons" width="960" height="600"></button>
+          <button type="button" data-caption="Settings — every change saves automatically"><img loading="lazy" src="/assets/screens/settings.webp" alt="Settings modal with cannonball size, targets, trajectory guide, sound toggles and a volume slider" width="960" height="600"></button>
+          <button type="button" data-caption="How to play — the five-step primer, in-game"><img loading="lazy" src="/assets/screens/help.webp" alt="How to play modal listing the five steps of a run" width="960" height="600"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= How to play ======================= -->
+    <section class="section" id="how-to-play">
+      <div class="container howto">
+        <div>
+          <div class="section-head reveal" style="margin-bottom:2rem">
+            <span class="kicker">How to play</span>
+            <h2>One gesture. Five rules.</h2>
+          </div>
+          <ol class="steps">
+            <li class="reveal"><span class="num">01</span><div><h3>Grab</h3><p>Press and hold the glowing cannonball resting at the muzzle.</p></div></li>
+            <li class="reveal"><span class="num">02</span><div><h3>Pull</h3><p>Drag down and back like a slingshot. Distance sets power, direction sets angle.</p></div></li>
+            <li class="reveal"><span class="num">03</span><div><h3>Release</h3><p>Let go to fire. The ball arcs across the sky on a clean, honest parabola.</p></div></li>
+            <li class="reveal"><span class="num">04</span><div><h3>Land</h3><p>Hit the single lit pad in the row below to score. A new pad lights up — never the same one twice.</p></div></li>
+            <li class="reveal"><span class="num">05</span><div><h3>Survive</h3><p>Any miss ends the run instantly. Beat your best, and the record saves the moment you set it.</p></div></li>
+          </ol>
+          <p class="howto-note reveal">Prefer it harder? Turn off the trajectory guide in Settings, or raise the target count for narrower pads.</p>
+        </div>
+        <figure class="howto-shot reveal">
+          <img loading="lazy" src="/assets/screens/flight.webp" alt="The cannonball mid-flight, trailing cyan light toward the target pads" width="960" height="600">
+        </figure>
+      </div>
+    </section>
+
+    <!-- ======================= Download ======================= -->
+    <section class="section center" id="download">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Download</span>
+          <h2>Get Cannon Craze<span class="dl-version">v1.1.0</span></h2>
+          <p>Free, open source, and yours to keep on every platform. Downloads are served from the official GitHub Releases page.</p>
+        </div>
+        <div class="dl-grid">
+          <article class="card dl-card reveal" data-os="windows">
+            <div class="dl-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3zm0 13 7.5 1.1v-7H3zm8.5 1.2L21 21V12.5h-9.5zm0-15.4v7.2H21V3z"/></svg>
+              <h3>Windows</h3>
+            </div>
+            <p class="dl-meta">Windows 10 / 11 (64-bit) · 191 MB · Java bundled, nothing to install</p>
+            <div class="dl-buttons">
+              <a class="btn btn-primary" href="https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-windows-x64.zip" rel="noopener">Download for Windows</a>
+            </div>
+          </article>
+
+          <article class="card dl-card reveal" data-os="macos">
+            <div class="dl-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.7 12.8c0-2.2 1.8-3.3 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8s-1.8-.8-2.9-.8C7.6 7.8 6.2 8.7 5.4 10c-1.6 2.7-.4 6.8 1.1 9 .7 1.1 1.6 2.3 2.8 2.3 1.1 0 1.5-.7 2.9-.7s1.7.7 2.9.7 2-1.1 2.7-2.2c.9-1.2 1.2-2.4 1.2-2.5-.1 0-2.3-.9-2.3-3.8zM14.4 6c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.6 1.4-.6.7-1.1 1.8-.9 2.8 1 .1 2-.5 2.6-1.3z"/></svg>
+              <h3>macOS</h3>
+            </div>
+            <p class="dl-meta">macOS 11+ · 9.4 MB · needs free Java 17+ (one-minute install)</p>
+            <div class="dl-buttons">
+              <a class="btn btn-primary" href="https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-macos-apple-silicon.zip" rel="noopener">Apple Silicon (M-series)</a>
+              <a class="btn btn-ghost" href="https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-macos-intel.zip" rel="noopener">Intel Macs</a>
+            </div>
+          </article>
+
+          <article class="card dl-card reveal" data-os="linux">
+            <div class="dl-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c-1.7 0-3 1.4-3 3.3 0 1.2.1 2.1-.3 3.1-.5 1.2-1.9 2.6-2.7 4.3-.6 1.2-.9 2.5-.6 3.8-.4.3-.7.8-.9 1.3-.3.1-.7.3-1 .6-.3.4-.2.9 0 1.3.1.4.2.8 0 1.2-.2.5 0 .9.5 1.1.9.3 2.4.5 3.3 1 .9.6 1.9.8 2.6.3.5-.3 2.4-.3 3.2-.1.8.3 1.7.2 2.4-.2s2.3-.7 3.3-1.2c.5-.3.6-.8.3-1.3-.2-.4-.2-.7-.1-1.1.2-.5.2-1 0-1.3-.2-.3-.6-.4-.9-.5-.1-.4-.4-.8-.7-1.1.4-1.3.1-2.7-.5-4-.7-1.6-1.9-3-2.4-4.2-.4-1-.4-1.9-.4-3C14.9 3.4 13.7 2 12 2zm-1.6 7.3c.5 0 .9.4.9 1s-.4 1-.9 1-.9-.4-.9-1 .4-1 .9-1zm3.2 0c.5 0 .9.4.9 1s-.4 1-.9 1-.9-.4-.9-1 .4-1 .9-1z"/></svg>
+              <h3>Linux</h3>
+            </div>
+            <p class="dl-meta">x64 · ARM64 · ARM32 (Raspberry Pi) · 9.3 MB · needs Java 17+</p>
+            <div class="dl-buttons">
+              <a class="btn btn-primary" href="https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-linux-x64.zip" rel="noopener">Linux x64</a>
+              <a class="btn btn-ghost btn-small" href="https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-linux-arm64.zip" rel="noopener">ARM 64-bit (Pi 4/5)</a>
+              <a class="btn btn-ghost btn-small" href="https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-linux-arm32.zip" rel="noopener">ARM 32-bit</a>
+            </div>
+          </article>
+
+          <article class="card dl-card reveal" data-os="android">
+            <div class="dl-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 8.6 19 6c.1-.2 0-.4-.1-.5-.2-.1-.4 0-.5.1l-1.5 2.6C15.6 7.6 13.9 7.2 12 7.2s-3.6.4-4.9 1L5.6 5.6c-.1-.2-.3-.2-.5-.1-.2.1-.2.3-.1.5l1.5 2.6C4 10 2.3 12.3 2 15h20c-.3-2.7-2-5-4.5-6.4zM7.8 12.4c-.5 0-.9-.4-.9-.9s.4-.9.9-.9.9.4.9.9-.4.9-.9.9zm8.4 0c-.5 0-.9-.4-.9-.9s.4-.9.9-.9.9.4.9.9-.4.9-.9.9z"/></svg>
+              <h3>Android</h3>
+            </div>
+            <p class="dl-meta">Android 5.0+ · 3.4 MB APK · fullscreen landscape, zero permissions</p>
+            <div class="dl-buttons">
+              <a class="btn btn-primary" href="https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-android.apk" rel="noopener">Download APK</a>
+              <span class="badge-soon" title="The Google Play release is in review">Google Play — coming soon</span>
+            </div>
+          </article>
+        </div>
+        <p class="dl-note reveal">
+          Install help for every platform lives in the
+          <a href="https://github.com/theanasuddin/CannonCraze#download-and-install" rel="noopener">install guide</a>.
+          Older versions and checksums: <a href="https://github.com/theanasuddin/CannonCraze/releases" rel="noopener">all releases</a>.
+          Sideloading the APK requires allowing installs from your browser in Android settings.
+        </p>
+      </div>
+    </section>
+
+    <!-- ======================= Requirements ======================= -->
+    <section class="section" id="requirements">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">System requirements</span>
+          <h2>It runs on almost anything</h2>
+          <p>Cannon Craze adapts its visual quality to your hardware automatically — these are the honest floors, not wishful minimums.</p>
+        </div>
+        <div class="req-wrap reveal">
+          <table class="req">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">Windows</th>
+                <th scope="col">macOS</th>
+                <th scope="col">Linux</th>
+                <th scope="col">Android</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">OS version</th>
+                <td>Windows 10 or 11 (64-bit)</td>
+                <td>macOS 11 Big Sur or newer</td>
+                <td>Any modern distro (x64 / ARM64 / ARM32)</td>
+                <td>Android 5.0 (API 21) or newer</td>
+              </tr>
+              <tr>
+                <th scope="row">Processor</th>
+                <td>Any dual-core x64 CPU</td>
+                <td>Apple Silicon or Intel</td>
+                <td>Dual-core x64 or ARM (Raspberry Pi 3+)</td>
+                <td>Any ARM or x86 chipset</td>
+              </tr>
+              <tr>
+                <th scope="row">Memory</th>
+                <td>2 GB RAM</td>
+                <td>2 GB RAM</td>
+                <td>1 GB RAM</td>
+                <td>1 GB RAM</td>
+              </tr>
+              <tr>
+                <th scope="row">Graphics</th>
+                <td>Any GPU or integrated graphics</td>
+                <td>Any</td>
+                <td>Any</td>
+                <td>OpenGL ES 2.0 (auto software fallback)</td>
+              </tr>
+              <tr>
+                <th scope="row">Storage</th>
+                <td>400 MB free (Java bundled)</td>
+                <td>40 MB free + Java 17</td>
+                <td>40 MB free + Java 17</td>
+                <td>15 MB free</td>
+              </tr>
+              <tr>
+                <th scope="row">Extras</th>
+                <td>None — fully self-contained</td>
+                <td><a href="https://adoptium.net" rel="noopener">Java 17+</a> (free)</td>
+                <td><a href="https://adoptium.net" rel="noopener">Java 17+</a> (free)</td>
+                <td>None — zero permissions</td>
+              </tr>
+              <tr>
+                <th scope="row">Input</th>
+                <td>Mouse</td>
+                <td>Mouse or trackpad</td>
+                <td>Mouse</td>
+                <td>One finger</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= FAQ ======================= -->
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-head center reveal" style="margin-inline:auto">
+          <span class="kicker">FAQ</span>
+          <h2>Questions, answered</h2>
+        </div>
+        <div class="faq">
+          <details class="reveal">
+            <summary>Is Cannon Craze really free?</summary>
+            <div class="faq-body">Completely. It's open source under the GPL-2.0 license — no ads, no in-app purchases, no accounts, no catch. If it makes you retry "just one more time", a star on <a href="https://github.com/theanasuddin/CannonCraze" rel="noopener">the GitHub repo</a> is the nicest thank-you.</div>
+          </details>
+          <details class="reveal">
+            <summary>Windows SmartScreen warns me about the download. Is it safe?</summary>
+            <div class="faq-body">Yes. The warning appears because the build isn't code-signed with a paid certificate — standard for small open-source games. Click <strong>More info</strong>, then <strong>Run anyway</strong>. Every line of the game's source is public on GitHub, so you can verify exactly what you're running.</div>
+          </details>
+          <details class="reveal">
+            <summary>macOS says the app "cannot be opened". What do I do?</summary>
+            <div class="faq-body">First launch: right-click <code>CannonCraze.app</code> and choose <strong>Open</strong>, then confirm — the standard path for apps that aren't notarized. If macOS still refuses, run <code>xattr -cr CannonCraze.app</code> in Terminal and open it again.</div>
+          </details>
+          <details class="reveal">
+            <summary>Do I need Java?</summary>
+            <div class="faq-body">On Windows, no — the download carries its own Java runtime. On macOS and Linux, install any free Java 17+ runtime such as <a href="https://adoptium.net" rel="noopener">Temurin</a> (<code>brew install --cask temurin</code> on macOS, <code>sudo apt install openjdk-17-jre</code> on Debian/Ubuntu).</div>
+          </details>
+          <details class="reveal">
+            <summary>Will it run smoothly on my old laptop or budget phone?</summary>
+            <div class="faq-body">That's the design goal. The game measures its own frame rate and automatically trims decorative effects (stars, glows, particles) to fit your hardware, while the physics run on a real-time clock so gameplay speed is always correct. On Android, if the graphics driver fails to start the game twice in a row, it switches itself to a software renderer and opens anyway.</div>
+          </details>
+          <details class="reveal">
+            <summary>When is the Google Play version coming?</summary>
+            <div class="faq-body">The Play Store release is in progress. Until it lands you can sideload the signed APK from this page — it's the same build, updated in step with every release.</div>
+          </details>
+          <details class="reveal">
+            <summary>Does the game collect any data?</summary>
+            <div class="faq-body">None. Zero permissions, zero network connections, zero analytics. Your best score and settings are stored only on your device. The full policy is one page: <a href="/privacy">privacy policy</a>.</div>
+          </details>
+          <details class="reveal">
+            <summary>Can I look at the code or contribute?</summary>
+            <div class="faq-body">Please do. The entire game — including this website — lives in <a href="https://github.com/theanasuddin/CannonCraze" rel="noopener">one public repository</a>. Bug reports, ideas and pull requests are welcome; start with the contributing guide.</div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= Open source strip ======================= -->
+    <section class="oss">
+      <div class="container reveal">
+        <span class="kicker">Open source</span>
+        <h2>Built in the open, start to finish</h2>
+        <p>Every pixel and every sound in Cannon Craze is generated by code you can read. The game, the Android port, and this site share one GPL-2.0 repository.</p>
+        <a class="btn btn-ghost" href="https://github.com/theanasuddin/CannonCraze" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.3 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85V21c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></svg>
+          Star on GitHub
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- ======================= Footer ======================= -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a class="footer-brand" href="#top">
+            <img src="/assets/icons/logo.svg" alt="" width="28" height="23">
+            <span>CANNON&nbsp;<span class="accent">CRAZE</span></span>
+          </a>
+          <p>A minimal, neon-noir arcade cannon game by Anas Uddin. Pull, aim, release — one miss ends the run.</p>
+        </div>
+        <nav aria-label="Game links">
+          <h3>Game</h3>
+          <ul>
+            <li><a href="#download">Download</a></li>
+            <li><a href="#requirements">System requirements</a></li>
+            <li><a href="#how-to-play">How to play</a></li>
+            <li><a href="#screenshots">Screenshots</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Project links">
+          <h3>Project</h3>
+          <ul>
+            <li><a href="https://github.com/theanasuddin/CannonCraze" rel="noopener">Source code</a></li>
+            <li><a href="https://github.com/theanasuddin/CannonCraze/releases" rel="noopener">All releases</a></li>
+            <li><a href="https://github.com/theanasuddin/CannonCraze/issues" rel="noopener">Report a bug</a></li>
+            <li><a href="/privacy">Privacy policy</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="year">2026</span> Anas Uddin · GPL-2.0</span>
+        <span>PULL&ensp;·&ensp;AIM&ensp;·&ensp;RELEASE</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Screenshot viewer">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close viewer">✕</button>
+    <figure>
+      <img id="lightboxImg" src="" alt="">
+      <figcaption id="lightboxCaption"></figcaption>
+    </figure>
+  </div>
+
+  <script src="/script.js" defer></script>
+</body>
+</html>

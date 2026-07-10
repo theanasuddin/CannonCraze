@@ -36,10 +36,17 @@ void drawMenuLogo() {
   pushStyle();
 
   glowCircle(centreX, 118, 30, ACCENT, 40);
-  shapeMode(CENTER);
-  noStroke();
-  fill(ACCENT);
-  shape(shapeLogo, centreX, 118, 70, 56.4);
+  if (shapeLogo != null) {
+    shapeMode(CENTER);
+    noStroke();
+    fill(ACCENT);
+    shape(shapeLogo, centreX, 118, 70, 56.4);
+  } else {
+    // The glyph failed to load: a plain crest keeps the menu whole.
+    noStroke();
+    fill(ACCENT);
+    circle(centreX, 118, 44);
+  }
 
   float tr = 10;
   textFont(fontBold, 46);

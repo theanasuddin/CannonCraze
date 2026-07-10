@@ -38,7 +38,7 @@ class UIButton {
   void render(boolean interactive) {
     boolean hot = interactive && contains(vmx, vmy);
     if (hot) wantHand = true;
-    hov = lerp(hov, hot ? 1 : 0, 0.22);
+    hov = lerp(hov, hot ? 1 : 0, expK(0.22));
 
     pushStyle();
     rectMode(CENTER);
@@ -88,7 +88,7 @@ class IconBtn {
   void render(boolean interactive, float alphaMul) {
     boolean hot = interactive && enabled && contains(vmx, vmy);
     if (hot) wantHand = true;
-    hov = lerp(hov, hot ? 1 : 0, 0.25);
+    hov = lerp(hov, hot ? 1 : 0, expK(0.25));
 
     color hi = (kind == ICON_CLOSE) ? CORAL : ACCENT;
     float dimA = enabled ? 1 : 0.32;
@@ -130,7 +130,7 @@ class UIToggle {
   void render(boolean interactive, float alphaMul) {
     boolean hot = interactive && contains(vmx, vmy);
     if (hot) wantHand = true;
-    anim = lerp(anim, on ? 1 : 0, 0.25);
+    anim = lerp(anim, on ? 1 : 0, expK(0.25));
 
     pushStyle();
     rectMode(CENTER);
@@ -176,7 +176,7 @@ class UISlider {
   void render(boolean interactive, float alphaMul, boolean enabled) {
     boolean hot = interactive && enabled && (dragging || contains(vmx, vmy));
     if (hot) wantHand = true;
-    hov = lerp(hov, hot ? 1 : 0, 0.25);
+    hov = lerp(hov, hot ? 1 : 0, expK(0.25));
 
     float dimA = enabled ? 1 : 0.32;
     float kx   = x + soundVolume * w;
@@ -231,7 +231,7 @@ void closeModal() {
 }
 
 void drawModal() {
-  modalT = lerp(modalT, 1, 0.18);
+  modalT = lerp(modalT, 1, expK(0.18));
   float e = easeOutCubic(modalT);
   float cardH = modalHeight();
 

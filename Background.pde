@@ -160,12 +160,15 @@ void drawStars() {
   pushStyle();
   noStroke();
   float t = tSec();
-  for (int i = 0; i < starCount; i++) {
+  // Lower quality tiers draw a thinner (but stable) subset of the field.
+  int shown = max(1, round(starCount * qStarFrac()));
+  boolean sparkles = qSparkles();
+  for (int i = 0; i < shown; i++) {
     float tw = 0.6 + 0.4 * sin(t * starSp[i] * 2.2 + starPh[i]);
     float a  = (60 + 130 * (starSz[i] / 2.4)) * tw;
     fill(#DDE6FF, a);
     circle(starX[i], starY[i], starSz[i]);
-    if (i % 19 == 0) {
+    if (sparkles && i % 19 == 0) {
       stroke(#DDE6FF, a * 0.35);
       strokeWeight(0.8);
       float f = 2.2 + starSz[i] * 1.6;
@@ -178,8 +181,10 @@ void drawStars() {
 }
 
 void updateMeteor() {
+  if (!qMeteor()) { mtActive = false; return; }
+
   if (!mtActive) {
-    meteorTimer -= 1 / 60.0;
+    meteorTimer -= dtSec;
     if (meteorTimer <= 0) {
       mtActive = true;
       mtX    = random(300, worldRight() - 20);
@@ -193,9 +198,9 @@ void updateMeteor() {
     return;
   }
 
-  mtAge += 1 / 60.0;
-  mtX   += mtVX;
-  mtY   += mtVY;
+  mtAge += dtSec;
+  mtX   += mtVX * nf;
+  mtY   += mtVY * nf;
   if (mtAge >= mtLife) {
     mtActive    = false;
     meteorTimer = random(6, 13);

@@ -33,15 +33,28 @@ PFont fontRegular, fontBold, fontScript;
 PShape shapeLogo;   // cannon glyph, style disabled so it can be tinted
 
 void loadTheme() {
-  fontRegular = createFont("Montserrat-Regular.otf", 96);
-  fontBold    = createFont("Montserrat-Bold.otf",    96);
-  fontScript  = createFont("Playlist-Script.otf",    96);
+  // No single missing or corrupt asset is allowed to stop the game from
+  // opening: fonts fall back to the system sans, the glyph to a plain crest.
+  try {
+    fontRegular = createFont("Montserrat-Regular.otf", 96);
+    fontBold    = createFont("Montserrat-Bold.otf",    96);
+    fontScript  = createFont("Playlist-Script.otf",    96);
+  } catch (Exception e) {
+    e.printStackTrace();
+  }
+  if (fontRegular == null) fontRegular = createFont("SansSerif", 96);
+  if (fontBold    == null) fontBold    = createFont("SansSerif-Bold", 96);
+  if (fontScript  == null) fontScript  = fontRegular;
 
-  PShape svg   = loadShape("logo.svg");
-  PShape child = svg.getChild("Layer 1");
-  if (child == null) child = svg.getChild("Layer_1");
-  shapeLogo = (child != null) ? child : svg;
-  shapeLogo.disableStyle();
+  try {
+    PShape svg   = loadShape("logo.svg");
+    PShape child = svg.getChild("Layer 1");
+    if (child == null) child = svg.getChild("Layer_1");
+    shapeLogo = (child != null) ? child : svg;
+    shapeLogo.disableStyle();
+  } catch (Exception e) {
+    shapeLogo = null;   // drawMenuLogo falls back to a plain crest
+  }
 }
 
 // -- Easing ---------------------------------------------------------------------
@@ -84,10 +97,12 @@ void trackedTextR(String s, float x, float y, float tracking) {
 
 // -- Glow primitives ------------------------------------------------------------
 
+// Both glow primitives honor the quality governor: lower tiers draw fewer
+// halo passes, keeping the bright core and shedding the faint outer layers.
 void glowCircle(float x, float y, float r, color c, float strength) {
   pushStyle();
   noStroke();
-  for (int i = 4; i >= 1; i--) {
+  for (int i = qGlowPasses(); i >= 1; i--) {
     fill(c, strength / (i * i));
     circle(x, y, (r + i * i * 2.4) * 2);
   }
@@ -96,7 +111,7 @@ void glowCircle(float x, float y, float r, color c, float strength) {
 
 void glowLine(float x1, float y1, float x2, float y2, color c, float coreW, float strength) {
   pushStyle();
-  for (int i = 3; i >= 1; i--) {
+  for (int i = qLinePasses(); i >= 1; i--) {
     stroke(c, strength / (i * i + 1));
     strokeWeight(coreW + i * i * 2.0);
     line(x1, y1, x2, y2);

@@ -85,6 +85,7 @@ final class SoundEngine {
     v.amp = amp;
     synchronized (voices) {
       if (voices.size() < MAX_VOICES) voices.add(v);
+      voices.notifyAll();   // wake the mixer if it is idling
     }
   }
 
@@ -106,6 +107,7 @@ final class SoundEngine {
 
   void release() {
     running = false;
+    synchronized (voices) { voices.notifyAll(); }
     if (mixer != null) mixer.interrupt();
     if (track != null) {
       try { track.release(); } catch (Exception ignored) { }
@@ -116,16 +118,31 @@ final class SoundEngine {
   private void mixLoop() {
     int[] mix = new int[MIX_FRAMES];
     short[] outBuf = new short[MIX_FRAMES];
+    int silentRuns = 0;   // consecutive buffers mixed with no active voice
 
     while (running) {
-      if (!active) {
-        synchronized (voices) {
-          try { voices.wait(200); } catch (InterruptedException e) { return; }
+      // Idle: after ~a third of a second of pure silence, park the thread
+      // instead of streaming zeros forever. On low-end phones the always-on
+      // write loop is measurable CPU and battery; parked, it costs nothing
+      // until the next effect (or resume) notifies.
+      boolean parked = false;
+      synchronized (voices) {
+        if (!active || (voices.isEmpty() && silentRuns >= 30)) {
+          parked = true;
+          try { track.pause(); } catch (Exception ignored) { }
+          while (running && (!active || voices.isEmpty())) {
+            try { voices.wait(500); } catch (InterruptedException e) { return; }
+          }
+          silentRuns = 0;
         }
-        continue;
+      }
+      if (!running) return;
+      if (parked) {
+        try { track.play(); } catch (Exception e) { return; }
       }
 
       java.util.Arrays.fill(mix, 0);
+      boolean mixedAny = false;
       synchronized (voices) {
         for (int i = voices.size() - 1; i >= 0; i--) {
           Voice v = voices.get(i);
@@ -134,9 +151,11 @@ final class SoundEngine {
             mix[j] += (int) (v.samples[v.pos + j] * v.amp);
           }
           v.pos += n;
+          mixedAny = true;
           if (v.pos >= v.samples.length) voices.remove(i);
         }
       }
+      silentRuns = mixedAny ? 0 : silentRuns + 1;
 
       for (int j = 0; j < MIX_FRAMES; j++) {
         int s = mix[j];

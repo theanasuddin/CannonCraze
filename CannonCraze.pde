@@ -56,6 +56,7 @@ float   soundVolume     = 0.8;   // 0..1 master volume
 float   angle      = 0;      // pull angle (ball dragged down-left of the pivot)
 float   velocity   = 0;
 float   flightTime = 0;
+float   flightAcc  = 0;      // real-time accumulator driving fixed flight steps
 boolean isAiming   = false;
 boolean isInFlight = false;
 float   aimX, aimY;          // ghost-ball position while aiming
@@ -79,14 +80,29 @@ boolean wantHand = false;    // any control hovered this frame gets a hand curso
 
 // -- Setup / draw -----------------------------------------------------------------
 
-void setup() {
+void settings() {
   // Initial window size == the virtual canvas (VIEW_W x VIEW_H). The custom
   // renderer is the stock JAVA2D pipeline plus a fix for a JDK race that used
   // to freeze the sketch during live window resizes.
   size(960, 600, "CannonCrazeGraphics");
-  pixelDensity(displayDensity());
+
+  // HiDPI rendering is wonderful until Java2D has to push 4x the pixels on a
+  // machine that cannot afford it. If a previous session stayed pinned at the
+  // lowest quality tier, the saved low-graphics flag drops this launch to 1x
+  // density (see Performance.pde). Settings runs before Processing's loaders
+  // are ready, so the flag is peeked with plain java.io.
+  int density = 1;
+  try { density = displayDensity(); } catch (Exception e) { }
+  if (density > 1 && "low".equals(peekGfxFlag())) density = 1;
+  pixelDensity(density);
+}
+
+void setup() {
   surface.setTitle("Cannon Craze");
-  surface.setIcon(loadImage("icon.png"));
+  try {
+    PImage icon = loadImage("icon.png");
+    if (icon != null) surface.setIcon(icon);
+  } catch (Exception e) { /* cosmetic only */ }
 
   centreX = VIEW_W / 2.0;
   centreY = VIEW_H / 2.0;
@@ -102,6 +118,8 @@ void setup() {
 }
 
 void draw() {
+  updateClock();
+  updatePerfGovernor();
   updateViewport();
   wantHand = false;
 
@@ -113,7 +131,7 @@ void draw() {
   if (modalId != MODAL_NONE) drawModal();
 
   if (fadeT > 0.004) {
-    fadeT = lerp(fadeT, 0, 0.16);
+    fadeT = lerp(fadeT, 0, expK(0.16));
     pushStyle();
     rectMode(CORNER);
     noStroke();
@@ -124,8 +142,15 @@ void draw() {
 
   endViewport();
 
-  cursor(wantHand ? HAND : ARROW);
+  // Only touch the AWT cursor when it actually changes.
+  int wantCursor = wantHand ? HAND : ARROW;
+  if (wantCursor != shownCursor) {
+    cursor(wantCursor);
+    shownCursor = wantCursor;
+  }
 }
+
+int shownCursor = -1;
 
 float tSec() {
   return millis() / 1000.0;
@@ -202,6 +227,7 @@ void nextRound() {
   angle      = 0;
   velocity   = 0;
   flightTime = 0;
+  flightAcc  = 0;
   isAiming   = false;
   isInFlight = false;
 
@@ -215,6 +241,7 @@ void nextRound() {
 void launch() {
   isInFlight = true;
   flightTime = 0;
+  flightAcc  = 0;
   recoilT    = 1;
   spawnBurst(muzzleX(), muzzleY(), ACCENT, 10, 2.2);
   sfxLaunch();
@@ -223,6 +250,7 @@ void launch() {
 void endFlight() {
   isInFlight = false;
   flightTime = 0;
+  flightAcc  = 0;
 }
 
 void triggerGameOver() {

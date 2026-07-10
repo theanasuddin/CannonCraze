@@ -30,7 +30,8 @@ void clearParticles() {
 }
 
 void spawnBurst(float x, float y, color c, int n, float speed) {
-  for (int i = 0; i < n; i++) {
+  int count = max(1, round(n * qBurstFrac()));
+  for (int i = 0; i < count; i++) {
     float a = random(TWO_PI);
     float s = random(0.4, 1.0) * speed;
     particles.add(new Particle(P_SPARK, x, y, cos(a) * s, sin(a) * s - 1,
@@ -39,7 +40,8 @@ void spawnBurst(float x, float y, color c, int n, float speed) {
 }
 
 void spawnRecordBurst(float x, float y) {
-  for (int i = 0; i < 46; i++) {
+  int count = round(46 * qBurstFrac());
+  for (int i = 0; i < count; i++) {
     float a = random(TWO_PI);
     float s = random(1.2, 4.6);
     color c = (i % 2 == 0) ? GOLD : ACCENT;
@@ -48,7 +50,10 @@ void spawnRecordBurst(float x, float y) {
   }
 }
 
+int trailTick = 0;
+
 void spawnTrail(float x, float y, float size) {
+  if (++trailTick % qTrailEvery() != 0) return;   // thinner comet tail on LOW
   particles.add(new Particle(P_TRAIL, x, y, 0, 0, 0.45, size, ACCENT));
 }
 
@@ -66,7 +71,7 @@ void updateParticles() {
   pushStyle();
   for (int i = particles.size() - 1; i >= 0; i--) {
     Particle p = particles.get(i);
-    p.age += 1 / 60.0;
+    p.age += dtSec;
     float u = p.age / p.life;
     if (u >= 1) {
       particles.remove(i);
@@ -74,9 +79,9 @@ void updateParticles() {
     }
 
     if (p.kind == P_SPARK) {
-      p.vy += 0.13;
-      p.x  += p.vx;
-      p.y  += p.vy;
+      p.vy += 0.13 * nf;
+      p.x  += p.vx * nf;
+      p.y  += p.vy * nf;
       noStroke();
       fill(p.col, 235 * (1 - u));
       circle(p.x, p.y, p.size * (1 - u * 0.55));
@@ -90,7 +95,7 @@ void updateParticles() {
       strokeWeight(2.2 * (1 - u) + 0.4);
       circle(p.x, p.y, p.size * easeOutCubic(u));
     } else {
-      p.y += p.vy;
+      p.y += p.vy * nf;
       noStroke();
       textAlign(CENTER, CENTER);
       textFont(fontBold, p.size);

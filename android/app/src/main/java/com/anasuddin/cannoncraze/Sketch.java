@@ -27,6 +27,22 @@ import processing.core.PShape;
  */
 public class Sketch extends PApplet {
 
+  // -- Renderer / safe mode -----------------------------------------------------------
+  // Normal launches use P2D (OpenGL ES). If MainActivity saw the previous
+  // launches die before the first frame (a GPU that refuses the GL surface),
+  // it constructs the sketch in safe mode: the software canvas renderer plus
+  // conservative visual quality. Slower, but it opens everywhere.
+
+  private final boolean safeMode;
+
+  public Sketch(boolean safeMode) {
+    this.safeMode = safeMode;
+  }
+
+  public Sketch() {
+    this(false);
+  }
+
   // -- Screens / flow ---------------------------------------------------------------
 
   static final int SCREEN_MENU = 0;
@@ -81,6 +97,7 @@ public class Sketch extends PApplet {
   float   angle      = 0;      // pull angle (ball dragged down-left of the pivot)
   float   velocity   = 0;
   float   flightTime = 0;
+  float   flightAcc  = 0;      // real-time accumulator driving fixed flight steps
   boolean isAiming   = false;
   boolean isInFlight = false;
   float   aimX, aimY;          // ghost-ball position while aiming
@@ -105,7 +122,7 @@ public class Sketch extends PApplet {
 
   @Override
   public void settings() {
-    fullScreen(P2D);
+    fullScreen(safeMode ? JAVA2D : P2D);
   }
 
   @Override
@@ -114,6 +131,12 @@ public class Sketch extends PApplet {
 
     centreX = VIEW_W / 2.0f;
     centreY = VIEW_H / 2.0f;
+
+    if (safeMode) {
+      // Software canvas: start frugal, let the governor climb if it can.
+      gfxTier    = GFX_LOW;
+      gfxTierMax = GFX_MED;
+    }
 
     loadTheme();
     initUi();
@@ -125,6 +148,9 @@ public class Sketch extends PApplet {
 
   @Override
   public void draw() {
+    updateClock();
+    updatePerfGovernor();
+    confirmBootOnce();
     updateViewport();
 
     beginViewport();
@@ -135,7 +161,7 @@ public class Sketch extends PApplet {
     if (modalId != MODAL_NONE) drawModal();
 
     if (fadeT > 0.004f) {
-      fadeT = lerp(fadeT, 0, 0.16f);
+      fadeT = lerp(fadeT, 0, expK(0.16f));
       pushStyle();
       rectMode(CORNER);
       noStroke();
@@ -150,6 +176,103 @@ public class Sketch extends PApplet {
   float tSec() {
     return millis() / 1000.0f;
   }
+
+  // The first frames made it to the screen: this launch is healthy. Clear the
+  // boot flag MainActivity set, so the safe-mode fallback stays armed only for
+  // launches that actually die before drawing.
+  boolean bootConfirmed = false;
+
+  void confirmBootOnce() {
+    if (bootConfirmed || frameCount < 3) return;
+    bootConfirmed = true;
+    try {
+      Activity a = getActivity();
+      if (a != null) {
+        a.getSharedPreferences(MainActivity.BOOT_PREFS, Context.MODE_PRIVATE)
+         .edit()
+         .putBoolean(MainActivity.KEY_BOOTING, false)
+         .putInt(MainActivity.KEY_FAIL_COUNT, 0)
+         .apply();
+      }
+    } catch (Exception e) {
+      // Never let bookkeeping take the game down.
+    }
+  }
+
+  // ===================================================================================
+  // Performance: real-time clock + adaptive quality governor
+  // ===================================================================================
+  // The clock measures real time between frames so all motion advances by the
+  // true delta: a phone stuck at 40 fps drops frames instead of playing in
+  // slow motion, and a 120 Hz display never fast-forwards. The governor
+  // watches the smoothed frame rate and steps the decoration tier down (or
+  // back up): star count, glow passes, light-column slices, particle counts.
+  // Gameplay geometry, physics, and difficulty are identical at every tier.
+
+  float dtSec = 1 / 60.0f;  // real seconds since the previous frame, clamped
+  float nf    = 1;          // normalized frames: dtSec * 60 (1.0 at exactly 60 fps)
+  long  lastFrameMs = -1;
+  float fpsAvg = 60;        // exponentially smoothed fps for the governor
+
+  void updateClock() {
+    long now = millis();
+    if (lastFrameMs < 0) lastFrameMs = now - 16;
+    float raw = (now - lastFrameMs) / 1000.0f;
+    lastFrameMs = now;
+    if (raw > 0.0001f) fpsAvg = lerp(fpsAvg, min(1.0f / raw, 240), 0.06f);
+    dtSec = constrain(raw, 1 / 240.0f, 1 / 20.0f);
+    nf    = dtSec * 60;
+  }
+
+  // Converts a per-frame lerp factor (tuned at 60 fps) into its frame-rate
+  // independent equivalent, so easing settles in the same wall-clock time
+  // everywhere.
+  float expK(float k) {
+    return 1 - pow(1 - k, nf);
+  }
+
+  static final int GFX_LOW  = 0;
+  static final int GFX_MED  = 1;
+  static final int GFX_HIGH = 2;
+
+  int     gfxTier    = GFX_HIGH;
+  int     gfxTierMax = GFX_HIGH;   // capped when a raise immediately falls back
+  boolean lastChangeWasRaise = false;
+  float   tierHoldT  = 0;          // seconds since the tier last changed
+  float   raiseOkT   = 0;          // continuous seconds of comfortable fps
+
+  void updatePerfGovernor() {
+    tierHoldT += dtSec;
+    if (millis() < 2500) return;   // ignore startup jank while caches warm
+
+    if (fpsAvg > 57) raiseOkT += dtSec;
+    else             raiseOkT = 0;
+
+    if (fpsAvg < 48 && gfxTier > GFX_LOW && tierHoldT > 2) {
+      // A drop right after a raise means the higher tier does not fit: stop
+      // offering it, otherwise the tiers oscillate.
+      if (lastChangeWasRaise && tierHoldT < 12) gfxTierMax = gfxTier - 1;
+      gfxTier--;
+      lastChangeWasRaise = false;
+      tierHoldT = 0;
+    } else if (raiseOkT > 6 && gfxTier < gfxTierMax) {
+      gfxTier++;
+      lastChangeWasRaise = true;
+      tierHoldT = 0;
+      raiseOkT  = 0;
+    }
+  }
+
+  // Quality knobs: everything below is decoration only; gameplay never reads these.
+
+  float qStarFrac()     { return gfxTier == GFX_HIGH ? 1.0f : (gfxTier == GFX_MED ? 0.55f : 0.3f); }
+  boolean qSparkles()   { return gfxTier == GFX_HIGH; }
+  boolean qMeteor()     { return gfxTier != GFX_LOW; }
+  int   qGlowPasses()   { return gfxTier == GFX_HIGH ? 4 : (gfxTier == GFX_MED ? 2 : 1); }
+  int   qLinePasses()   { return gfxTier == GFX_HIGH ? 3 : (gfxTier == GFX_MED ? 2 : 1); }
+  int   qColumnSlices() { return gfxTier == GFX_HIGH ? 30 : (gfxTier == GFX_MED ? 16 : 8); }
+  float qBurstFrac()    { return gfxTier == GFX_HIGH ? 1.0f : (gfxTier == GFX_MED ? 0.7f : 0.5f); }
+  int   qTrailEvery()   { return gfxTier == GFX_LOW ? 2 : 1; }
 
   // -- Input (single touch maps to the mouse callbacks) ------------------------------
 
@@ -234,6 +357,7 @@ public class Sketch extends PApplet {
     angle      = 0;
     velocity   = 0;
     flightTime = 0;
+    flightAcc  = 0;
     isAiming   = false;
     isInFlight = false;
 
@@ -247,6 +371,7 @@ public class Sketch extends PApplet {
   void launch() {
     isInFlight = true;
     flightTime = 0;
+    flightAcc  = 0;
     recoilT    = 1;
     spawnBurst(muzzleX(), muzzleY(), ACCENT, 10, 2.2f);
     sfxLaunch();
@@ -255,6 +380,7 @@ public class Sketch extends PApplet {
   void endFlight() {
     isInFlight = false;
     flightTime = 0;
+    flightAcc  = 0;
   }
 
   void triggerGameOver() {
@@ -339,15 +465,28 @@ public class Sketch extends PApplet {
   PShape shapeLogo;   // cannon glyph, style disabled so it can be tinted
 
   void loadTheme() {
-    fontRegular = createFont("Montserrat-Regular.otf", 96);
-    fontBold    = createFont("Montserrat-Bold.otf",    96);
-    fontScript  = createFont("Playlist-Script.otf",    96);
+    // No single missing or corrupt asset is allowed to stop the game from
+    // opening: fonts fall back to the system sans, the glyph to a plain crest.
+    try {
+      fontRegular = createFont("Montserrat-Regular.otf", 96);
+      fontBold    = createFont("Montserrat-Bold.otf",    96);
+      fontScript  = createFont("Playlist-Script.otf",    96);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    if (fontRegular == null) fontRegular = createFont("SansSerif", 96);
+    if (fontBold    == null) fontBold    = fontRegular;
+    if (fontScript  == null) fontScript  = fontRegular;
 
-    PShape svg   = loadShape("logo.svg");
-    PShape child = svg.getChild("Layer 1");
-    if (child == null) child = svg.getChild("Layer_1");
-    shapeLogo = (child != null) ? child : svg;
-    shapeLogo.disableStyle();
+    try {
+      PShape svg   = loadShape("logo.svg");
+      PShape child = svg.getChild("Layer 1");
+      if (child == null) child = svg.getChild("Layer_1");
+      shapeLogo = (child != null) ? child : svg;
+      shapeLogo.disableStyle();
+    } catch (Exception e) {
+      shapeLogo = null;   // drawMenuLogo falls back to a plain crest
+    }
   }
 
   float easeOutCubic(float p) {
@@ -387,10 +526,12 @@ public class Sketch extends PApplet {
 
   // Glow primitives
 
+  // Both glow primitives honor the quality governor: lower tiers draw fewer
+  // halo passes, keeping the bright core and shedding the faint outer layers.
   void glowCircle(float x, float y, float r, int c, float strength) {
     pushStyle();
     noStroke();
-    for (int i = 4; i >= 1; i--) {
+    for (int i = qGlowPasses(); i >= 1; i--) {
       fill(c, strength / (i * i));
       circle(x, y, (r + i * i * 2.4f) * 2);
     }
@@ -399,7 +540,7 @@ public class Sketch extends PApplet {
 
   void glowLine(float x1, float y1, float x2, float y2, int c, float coreW, float strength) {
     pushStyle();
-    for (int i = 3; i >= 1; i--) {
+    for (int i = qLinePasses(); i >= 1; i--) {
       stroke(c, strength / (i * i + 1));
       strokeWeight(coreW + i * i * 2.0f);
       line(x1, y1, x2, y2);
@@ -642,12 +783,15 @@ public class Sketch extends PApplet {
     pushStyle();
     noStroke();
     float t = tSec();
-    for (int i = 0; i < starCount; i++) {
+    // Lower quality tiers draw a thinner (but stable) subset of the field.
+    int shown = max(1, round(starCount * qStarFrac()));
+    boolean sparkles = qSparkles();
+    for (int i = 0; i < shown; i++) {
       float tw = 0.6f + 0.4f * sin(t * starSp[i] * 2.2f + starPh[i]);
       float a  = (60 + 130 * (starSz[i] / 2.4f)) * tw;
       fill(0xFFDDE6FF, a);
       circle(starX[i], starY[i], starSz[i]);
-      if (i % 19 == 0) {
+      if (sparkles && i % 19 == 0) {
         stroke(0xFFDDE6FF, a * 0.35f);
         strokeWeight(0.8f);
         float f = 2.2f + starSz[i] * 1.6f;
@@ -660,8 +804,10 @@ public class Sketch extends PApplet {
   }
 
   void updateMeteor() {
+    if (!qMeteor()) { mtActive = false; return; }
+
     if (!mtActive) {
-      meteorTimer -= 1 / 60.0f;
+      meteorTimer -= dtSec;
       if (meteorTimer <= 0) {
         mtActive = true;
         mtX    = random(300, worldRight() - 20);
@@ -675,9 +821,9 @@ public class Sketch extends PApplet {
       return;
     }
 
-    mtAge += 1 / 60.0f;
-    mtX   += mtVX;
-    mtY   += mtVY;
+    mtAge += dtSec;
+    mtX   += mtVX * nf;
+    mtY   += mtVY * nf;
     if (mtAge >= mtLife) {
       mtActive    = false;
       meteorTimer = random(6, 13);
@@ -711,7 +857,7 @@ public class Sketch extends PApplet {
     if (shakeT > 0.01f) {
       float m = 7 * shakeT * shakeT;
       translate(random(-m, m), random(-m, m));
-      shakeT = lerp(shakeT, 0, 0.09f);
+      shakeT = lerp(shakeT, 0, expK(0.09f));
     }
 
     if (isAiming) updateAim();
@@ -756,8 +902,8 @@ public class Sketch extends PApplet {
 
   void drawCannon() {
     float targetA = isAiming ? angle - PI : (isInFlight ? barrelAngle : -QUARTER_PI);
-    barrelAngle = lerp(barrelAngle, targetA, 0.3f);
-    recoilT     = max(0, recoilT - 0.07f);
+    barrelAngle = lerp(barrelAngle, targetA, expK(0.3f));
+    recoilT     = max(0, recoilT - 0.07f * nf);
 
     pushStyle();
     pushMatrix();
@@ -884,8 +1030,31 @@ public class Sketch extends PApplet {
   }
 
   // -- Flight ---------------------------------------------------------------------
+  // Fixed-step integration on the real clock. The flight always advances in
+  // the same 0.1-unit samples it did before (exactly one per frame at 60 fps),
+  // but the number of samples per frame follows real elapsed time. A device
+  // stuck at 30 fps takes two samples per frame instead of playing in slow
+  // motion, a 120 Hz display takes one every other frame instead of
+  // fast-forwarding, and collision checks can never skip past the pad row.
 
   void updateProjectile() {
+    flightAcc += 6.0f * dtSec;                            // 0.1 units per 60th of a second
+    int guard = 0;
+    while (isInFlight && flightAcc >= 0.1f && guard++ < 8) {
+      flightAcc -= 0.1f;
+      stepFlight();
+    }
+    if (flightAcc >= 0.1f) flightAcc = 0;                 // shed backlog after a huge hitch
+
+    if (isInFlight) {
+      float vx = velocity * cos(angle);
+      float vy = velocity * sin(angle);
+      drawBall(CANNON_X - vx * flightTime,
+               GRAVITY * flightTime * flightTime - vy * flightTime + CANNON_Y);
+    }
+  }
+
+  void stepFlight() {
     float t  = flightTime;
     float vx = velocity * cos(angle);
     float vy = velocity * sin(angle);
@@ -893,7 +1062,6 @@ public class Sketch extends PApplet {
     float py = GRAVITY * t * t - vy * t + CANNON_Y;
 
     spawnTrail(px, py, ballRadius * 0.9f);
-    drawBall(px, py);
     flightTime += 0.1f;
 
     // Complete miss: fell past the bottom of the screen
@@ -969,7 +1137,7 @@ public class Sketch extends PApplet {
       noStroke();
       fill(255, 190 * padFlash);
       rect(padFlashX + gap / 2, TARGET_ROW_Y, padFlashW - gap, TARGET_H, 5);
-      padFlash = max(0, padFlash - 0.05f);
+      padFlash = max(0, padFlash - 0.05f * nf);
     }
     popStyle();
   }
@@ -978,7 +1146,7 @@ public class Sketch extends PApplet {
     pushStyle();
     rectMode(CORNER);
     noStroke();
-    int slices = 30;
+    int slices = qColumnSlices();
     for (int i = 0; i < slices; i++) {
       float f = i / (float) slices;             // 0 at pad, 1 at top
       fill(ACCENT, maxAlpha * (1 - f) * (1 - f));
@@ -998,7 +1166,7 @@ public class Sketch extends PApplet {
     trackedTextL("SCORE", 36, 40, 3);
     trackedTextR("BEST", 924, 40, 3);
 
-    scorePop = max(0, scorePop - 0.05f);
+    scorePop = max(0, scorePop - 0.05f * nf);
     float s = 1 + 0.4f * easeOutCubic(scorePop);
     pushMatrix();
     translate(37, 72);
@@ -1040,7 +1208,7 @@ public class Sketch extends PApplet {
   // -- Game-over overlay ------------------------------------------------------------
 
   void drawGameOverOverlay() {
-    overlayT = lerp(overlayT, 1, 0.14f);
+    overlayT = lerp(overlayT, 1, expK(0.14f));
     float e = easeOutCubic(overlayT);
 
     pushStyle();
@@ -1116,10 +1284,17 @@ public class Sketch extends PApplet {
     pushStyle();
 
     glowCircle(centreX, 118, 30, ACCENT, 40);
-    shapeMode(CENTER);
-    noStroke();
-    fill(ACCENT);
-    shape(shapeLogo, centreX, 118, 70, 56.4f);
+    if (shapeLogo != null) {
+      shapeMode(CENTER);
+      noStroke();
+      fill(ACCENT);
+      shape(shapeLogo, centreX, 118, 70, 56.4f);
+    } else {
+      // The glyph failed to load: a plain crest keeps the menu whole.
+      noStroke();
+      fill(ACCENT);
+      circle(centreX, 118, 44);
+    }
 
     float tr = 10;
     textFont(fontBold, 46);
@@ -1198,7 +1373,7 @@ public class Sketch extends PApplet {
 
     void render(boolean interactive) {
       boolean hot = interactive && contains(vmx, vmy) && mousePressed;
-      hov = lerp(hov, hot ? 1 : 0, 0.22f);
+      hov = lerp(hov, hot ? 1 : 0, expK(0.22f));
 
       pushStyle();
       rectMode(CENTER);
@@ -1247,7 +1422,7 @@ public class Sketch extends PApplet {
 
     void render(boolean interactive, float alphaMul) {
       boolean hot = interactive && enabled && contains(vmx, vmy) && mousePressed;
-      hov = lerp(hov, hot ? 1 : 0, 0.25f);
+      hov = lerp(hov, hot ? 1 : 0, expK(0.25f));
 
       int hi = (kind == ICON_CLOSE) ? CORAL : ACCENT;
       float dimA = enabled ? 1 : 0.32f;
@@ -1287,7 +1462,7 @@ public class Sketch extends PApplet {
     }
 
     void render(boolean interactive, float alphaMul) {
-      anim = lerp(anim, on ? 1 : 0, 0.25f);
+      anim = lerp(anim, on ? 1 : 0, expK(0.25f));
 
       pushStyle();
       rectMode(CENTER);
@@ -1331,7 +1506,7 @@ public class Sketch extends PApplet {
 
     void render(boolean interactive, float alphaMul, boolean enabled) {
       boolean hot = interactive && enabled && dragging;
-      hov = lerp(hov, hot ? 1 : 0, 0.25f);
+      hov = lerp(hov, hot ? 1 : 0, expK(0.25f));
 
       float dimA = enabled ? 1 : 0.32f;
       float kx   = x + soundVolume * w;
@@ -1383,7 +1558,7 @@ public class Sketch extends PApplet {
   }
 
   void drawModal() {
-    modalT = lerp(modalT, 1, 0.18f);
+    modalT = lerp(modalT, 1, expK(0.18f));
     float e = easeOutCubic(modalT);
     float cardH = modalHeight();
 
@@ -1591,7 +1766,8 @@ public class Sketch extends PApplet {
   }
 
   void spawnBurst(float x, float y, int c, int n, float speed) {
-    for (int i = 0; i < n; i++) {
+    int count = max(1, round(n * qBurstFrac()));
+    for (int i = 0; i < count; i++) {
       float a = random(TWO_PI);
       float s = random(0.4f, 1.0f) * speed;
       particles.add(new Particle(P_SPARK, x, y, cos(a) * s, sin(a) * s - 1,
@@ -1600,7 +1776,8 @@ public class Sketch extends PApplet {
   }
 
   void spawnRecordBurst(float x, float y) {
-    for (int i = 0; i < 46; i++) {
+    int count = round(46 * qBurstFrac());
+    for (int i = 0; i < count; i++) {
       float a = random(TWO_PI);
       float s = random(1.2f, 4.6f);
       int   c = (i % 2 == 0) ? GOLD : ACCENT;
@@ -1609,7 +1786,10 @@ public class Sketch extends PApplet {
     }
   }
 
+  int trailTick = 0;
+
   void spawnTrail(float x, float y, float size) {
+    if (++trailTick % qTrailEvery() != 0) return;   // thinner comet tail on LOW
     particles.add(new Particle(P_TRAIL, x, y, 0, 0, 0.45f, size, ACCENT));
   }
 
@@ -1627,7 +1807,7 @@ public class Sketch extends PApplet {
     pushStyle();
     for (int i = particles.size() - 1; i >= 0; i--) {
       Particle p = particles.get(i);
-      p.age += 1 / 60.0f;
+      p.age += dtSec;
       float u = p.age / p.life;
       if (u >= 1) {
         particles.remove(i);
@@ -1635,9 +1815,9 @@ public class Sketch extends PApplet {
       }
 
       if (p.kind == P_SPARK) {
-        p.vy += 0.13f;
-        p.x  += p.vx;
-        p.y  += p.vy;
+        p.vy += 0.13f * nf;
+        p.x  += p.vx * nf;
+        p.y  += p.vy * nf;
         noStroke();
         fill(p.col, 235 * (1 - u));
         circle(p.x, p.y, p.size * (1 - u * 0.55f));
@@ -1651,7 +1831,7 @@ public class Sketch extends PApplet {
         strokeWeight(2.2f * (1 - u) + 0.4f);
         circle(p.x, p.y, p.size * easeOutCubic(u));
       } else {
-        p.y += p.vy;
+        p.y += p.vy * nf;
         noStroke();
         textAlign(CENTER, CENTER);
         textFont(fontBold, p.size);

@@ -185,7 +185,7 @@ Prebuilt packages for every desktop platform are published on the [Releases page
 | Linux (x64) | [CannonCraze-linux-x64.zip](https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-linux-x64.zip) | Yes, 17+ |
 | Linux (ARM 64-bit, Raspberry Pi 4 / 5) | [CannonCraze-linux-arm64.zip](https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-linux-arm64.zip) | Yes, 17+ |
 | Linux (ARM 32-bit, older Raspberry Pi) | [CannonCraze-linux-arm32.zip](https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-linux-arm32.zip) | Yes, 17+ |
-| Android 5.0+ | [Android project](android/), Play Store release in progress | n/a |
+| Android 5.0+ | [CannonCraze-android.apk](https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-android.apk) · [Android project](android/), Play Store release in progress | n/a |
 
 ### Windows
 
@@ -229,6 +229,8 @@ Highlights of the port:
 
 - Identical gameplay, physics, palette, and procedural sound
 - P2D (OpenGL ES) rendering, fullscreen immersive, notch to notch
+- The same real-time clock and adaptive quality governor as the desktop build, so weak phones lower the garnish instead of the frame rate
+- A safe-mode fallback: if a launch dies before the first frame twice in a row (a GPU that refuses the GL surface), the next launch automatically switches to the software renderer and opens anyway
 - Single-touch aiming with a finger-sized grab zone
 - The system back gesture walks modal, then run, then menu
 - Saves via SharedPreferences, no permissions, no network, no ads
@@ -287,6 +289,7 @@ The desktop code is organized as one tab per concern. All tabs compile into a si
 | `CannonCraze.pde` | Entry point. Screen and modal state machine, gameplay constants, global game state, input routing, round and game-over flow |
 | `Theme.pde` | The design system: full color palette, font loading, the cannon glyph, easing, letter-spaced text helpers, glow primitives, glass panels |
 | `Viewport.pde` | The resizable-window system: a fixed 960 x 600 design canvas scaled uniformly, with the world extended past it so every pixel of the window is scene, never bars, plus the window-to-canvas mouse mapping |
+| `Performance.pde` | The real-time clock and the adaptive quality governor: all motion advances by true elapsed time, and the decoration budget (stars, glow passes, particles) steps down or up with the measured frame rate |
 | `Background.pde` | The night scene. Static layers (sky gradient, nebula glows, ringed planet, mountain ridges, ground) render once into a window-sized buffer; stars twinkle and meteors streak on top every frame |
 | `Gameplay.pde` | The cannon, aiming and the elastic pull, the trajectory preview, projectile integration, target pads and hit resolution, HUD, readouts, and the game-over overlay |
 | `Menu.pde` | Main menu: logo crest, wordmark, buttons, footer, widget construction |
@@ -302,6 +305,8 @@ The Android port (`android/app/src/main/java/`) mirrors the same sections inside
 A few implementation notes worth knowing:
 
 - **One draw loop, no surprises.** `draw()` dispatches to the current screen, then layers the active modal, then a fade-in veil after screen switches. Input handlers are tiny routers that delegate to whichever surface is on top.
+- **The game plays at the same speed on every machine.** All motion, the flight physics, particles, timers, and easing, advances by real elapsed time, with the projectile integrated in fixed steps so collisions never skip the pad row. A machine stuck at 30 fps drops frames instead of running in slow motion, and a 120 Hz display never fast-forwards.
+- **Quality adapts to the hardware.** A governor watches the smoothed frame rate and steps the decoration tier down (or back up): star count, glow passes, light-column slices, particle counts. Gameplay geometry, physics, and difficulty are identical at every tier. If a HiDPI window stays pinned at the lowest tier, the next launch renders at 1x density, and the flag heals itself if the machine later proves comfortable.
 - **Resolution independence, extended.** The game simulates and lays out on a fixed 960 x 600 design canvas. Each frame the viewport computes one uniform scale, then extends the world beyond the design region to cover the whole window: the sky reaches higher, the mountains and ground run wider, the platform pours out to the true edges. Gameplay geometry never moves, so physics and difficulty are untouched by window size, and there are no letterbox bars, ever.
 - **The scene is cached and blitted 1:1.** Everything static about the background renders into a buffer sized to the window's exact pixels, rebuilt only on resize. Each frame it blits in screen space with no transform, which keeps Java2D on its fast copy path; drawing it under the fractional viewport scale instead would force per-pixel interpolation (measured: 12 fps versus 60 fps at 1920 x 1080).
 - **Resize is crash-proof.** Live-resizing an AWT window can race the JDK's buffer strategy and used to kill the animation thread with a NullPointerException. The custom surface in `CannonCrazeGraphics.java` drops that single stale frame instead, and the game never notices.
@@ -361,7 +366,7 @@ On desktop, state lives in two tiny plain-text files inside `data/`, created and
 | File | Content | When it is written |
 | --- | --- | --- |
 | `data/high_score.txt` | A single integer, your best score | The moment a run ends with a new record |
-| `data/settings.txt` | Five lines: target count, guide hidden flag, ball radius, sound on flag, volume | On every change in the Settings modal and when the modal closes |
+| `data/settings.txt` | Six lines: target count, guide hidden flag, ball radius, sound on flag, volume, graphics flag (`auto` or `low`) | On every change in the Settings modal, when the modal closes, and when the quality governor updates the graphics flag |
 
 Both loaders are defensive: missing, malformed, or older three-line files simply fall back to defaults, so deleting either file is a clean reset. The Android edition stores the same values in SharedPreferences.
 
@@ -372,6 +377,7 @@ CannonCraze/
 |-- CannonCraze.pde           # Entry point: state, constants, flow, input
 |-- Theme.pde                 # Design system: palette, fonts, glow, panels
 |-- Viewport.pde              # Full-bleed scaling over the design canvas
+|-- Performance.pde           # Real-time clock + adaptive quality governor
 |-- Background.pde            # Procedural night scene with cached buffer
 |-- Gameplay.pde              # Cannon, aiming, flight, targets, HUD, overlay
 |-- Menu.pde                  # Main menu
