@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Cannon Craze — official site
+   Cannon Craze official site
    The design system mirrors the game itself: deep-navy night, one luminous
    accent, Montserrat with generous tracking, glass panels, honest glows.
    ========================================================================== */
@@ -734,6 +734,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  padding: 2rem 1.4rem;
 }
 
 .dl-card.is-detected {
@@ -778,9 +779,14 @@ p {
 
 .dl-buttons .btn {
   width: 100%;
+  padding-inline: 0.9em;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
 }
 
 .badge-soon {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
   display: inline-flex;
   align-items: center;
   justify-content: center;

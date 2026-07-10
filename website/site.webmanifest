@@ -1,7 +1,7 @@
 {
   "name": "Cannon Craze",
   "short_name": "Cannon Craze",
-  "description": "A minimal, neon-noir arcade cannon game. Pull, aim, release — one miss ends the run.",
+  "description": "A minimal, neon-noir arcade cannon game. Pull, aim, release. One miss ends the run.",
   "start_url": "/",
   "display": "browser",
   "background_color": "#030210",

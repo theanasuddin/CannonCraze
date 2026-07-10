@@ -1,4 +1,4 @@
-# Cannon Craze — official website
+# Cannon Craze official website
 
 The official landing page for [Cannon Craze](https://github.com/theanasuddin/CannonCraze):
 a fully static, dependency-free site that shares the game's own design system
@@ -7,7 +7,7 @@ a fully static, dependency-free site that shares the game's own design system
 ## Stack
 
 None. Hand-written HTML, CSS, and vanilla JS. No build step, no framework,
-no external requests — fonts, icons, and screenshots are all self-hosted and
+no external requests: fonts, icons, and screenshots are all self-hosted and
 optimized (WebP screens, WOFF2 fonts).
 
 ## Deploy to Vercel

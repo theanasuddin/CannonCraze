@@ -1,4 +1,4 @@
-/* Cannon Craze — site behavior. No frameworks, no dependencies. */
+/* Cannon Craze site behavior. No frameworks, no dependencies. */
 (function () {
   "use strict";
 
@@ -52,7 +52,7 @@
     windows: {
       label: "Download for Windows",
       href: "https://github.com/theanasuddin/CannonCraze/releases/latest/download/CannonCraze-windows-x64.zip",
-      sub: "Windows 10/11 · 191 MB · v1.1.0 · nothing else to install"
+      sub: "Windows 10/11 · 189 MB · v1.1.0 · nothing else to install"
     },
     macos: {
       label: "Download for macOS",
